@@ -14,11 +14,13 @@
 ## Basic Redis Commands
 
 ## Handling Expiraion
+- how to simulation
 
 ## Lists
 
 ## Sets
-
+9
 ## Hashes
 
 ## NodeJS vs Python 
+- python is easier!
