@@ -14,15 +14,31 @@
  4. Install Redis. Type in WSL terminal: `sudo apt-get install redis`
 
 ## Basic Redis Commands
+1. `ps aux | grep redis` keep run 6379 default port somewhere
+2. redis-server --port 6360
+3. redis-cli has defaut port as 6379
+
+- set {key} {value}
+- nil = null
+- flushall: delete all key
+- get name : get only work for string
+- del {key}
 
 ## Handling Expiration
-- how to simulation
+- ttl: time to live (-1 : no expire time)(ttl name)
+- expire name 10: expire after 10 seconds
+- setex {key} 10 {value} : set + expire
 
 ## Lists
+- lpush {key} {value} : left for first(left) (right for last) (pop is L or R)
+- lrange friends 0 -1 : 0 to -1 = all index
 
-## Sets
-9
-## Hashes
+## Sets (all mem must be unique) (no order)
+- SADD {key} {value}
+- SMEMBER {key}
+
+## Hashes (proporties: metadata)
+- key value pair inside individual key
 
 ## NodeJS vs Python 
 - Python is easier!
