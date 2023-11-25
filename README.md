@@ -15,7 +15,7 @@ in-memory DB: physical: RAM/logical: Cache
 
 *Sample*
 > optimized btw Time & Size (render time as optional)
-- Image Size: Large (to show how compression help)
+- Image Size: Need to be Large (to show how compression help)
 - Album ID(Large Quantity): Section got Prime into Redis to show Time reduce
 
 ### optimization

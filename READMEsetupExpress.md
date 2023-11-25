@@ -18,9 +18,10 @@
 ```
  "type": "module",
 ``` 
-to import with import, not require
+to enables ECMAScript Modules (ES Modules or ES6 Modules) in your Node.js code.
+(to import with import, not require)
 
-## run with `node app`
+8. run with `node app` (`node` {file name})
 
 **extra** type `ctrl c` in terminal to stop interval function that keep sending data every timeout(`Cancel Process`)
 
