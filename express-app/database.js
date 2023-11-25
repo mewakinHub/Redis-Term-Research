@@ -8,12 +8,19 @@ const pool = mysql.createPool({
    maxPacketSize: 1000000,
 }).promise()
 
-export async function getAlbumAll() {
-   const [rows] = await pool.query('SELECT album FROM images;')
+export async function getImageAll() {
+   const [rows] = await pool.query('SELECT image FROM images;')
    return rows
 }
 
-export async function getImageAll() {
-   const [rows] = await pool.query('SELECT image FROM images;')
+export async function getImageByAlbum(album) {
+   const [rows] = await pool.query(`SELECT image FROM images
+                                    WHERE album=?;`, [album])
+   return rows
+}
+
+export async function getImageById(id) {
+   const [rows] = await pool.query(`SELECT image FROM images
+                                    WHERE id=?;`, [id])
    return rows
 }
