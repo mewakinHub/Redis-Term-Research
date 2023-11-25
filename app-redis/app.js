@@ -1,26 +1,46 @@
 import express from 'express'
-import {RgetImageAll, RgetImageByAlbum, RgetImageById} from './rediSQL.js'
+import {getImageAll, getImageByAlbum, getImageById} from './database.js'
+import redis from 'redis'
+
+const app = express()
+const redisCli = redis.createClient()
+redisCli.on('error', err => console.log('Redis Client Error', err));
+await redisCli.connect();
 
 const port = 3001
-const app = express()
+const DEFAULT_EXPIRATION = 3600
 
 app.use(express.static('public'));
 
 app.get('/imgall', async (req, res) => {
-   const result = await RgetImageAll();
-   res.json(result);
+   const rdata = await redisCli.get('images');
+   if (rdata != null) {
+      console.log('cache hit!')
+      res.json(JSON.parse(rdata))
+   }
+   else {
+      console.log('cache miss!')
+      const dbdata = await getImageAll();
+      res.json(dbdata);
+      redisCli.setEx('images', DEFAULT_EXPIRATION, JSON.stringify(dbdata));
+   }
 });
 
 app.get('/imgalbum/:album', async (req, res) => {
    const album = req.params.album
-   const result = await RgetImageByAlbum(album);
+   const result = await getImageByAlbum(album);
    res.json(result);
 });
 
 app.get('/imgid/:id', async (req, res) => {
    const id = req.params.id
-   const result = await RgetImageById(id);
+   const result = await getImageById(id);
    res.json(result);
+});
+
+app.get('/test', async (req, res) => {
+   const result = await redisCli.get('key1');
+   res.send(result);
 });
 
 app.listen(port, () => {
