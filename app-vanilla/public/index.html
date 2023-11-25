@@ -6,7 +6,7 @@
    <div id="imageResult">
       <script>
          var startTime = new Date().getTime();
-         fetch('/v/imgalbum/2')
+         fetch('/imgalbum/2')
             .then(response => response.json())
             .then(data => {
                const imageResultDiv = document.getElementById('imageResult');
