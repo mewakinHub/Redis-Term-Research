@@ -10,12 +10,12 @@ const pool = mysql.createPool({
    database: process.env.MYSQL_DATABASE
 }).promise()
 
-async function getAlbum() {
+export async function getAlbum() {
    const [rows] = await pool.query('SELECT album FROM images;')
    return rows
 }
 
-async function getImage(id) {
+export async function getImage(id) {
    const [rows] = await pool.query(`SELECT image FROM images
                                     WHERE id=?;`, [id])
    return rows

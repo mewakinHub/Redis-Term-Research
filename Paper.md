@@ -1,124 +1,67 @@
-### 1. **Memory Usage Optimization:**
-   - **Techniques:**
-     - Use Redis' memory reports and tools (`MEMORY STATS`, `MEMORY DOCTOR`) to analyze memory consumption.
-     - Set memory policies and eviction policies to manage memory efficiently.
+# Optimizing Image Media Retrieval with Redis: A Node.js Approach
 
-   - **Reference:**
-     - Redis Documentation on [Memory Optimization](https://docs.redis.com/latest/ri/memory-optimizations/)
+## Abstract:
+This research explores the optimization of image media retrieval using Redis and Node.js. Leveraging Redis as an in-memory database for caching, we implemented various strategies to enhance retrieval speed, reduce memory consumption, and ensure data integrity. The paper covers techniques such as memory usage optimization, compression, efficient data structure selection, and backup strategies. A sample implementation, utilizing Node.js, Express, and Postman, showcases the effectiveness of the proposed optimizations.
 
-### 2. **Compression:**
-   - **Techniques:**
-     - Leverage Redis' ability to compress certain data structures (e.g., `HASH_ZIPMAP`, `LIST_ZIPLIST`).
-     - Implement client-side compression if necessary before storing data in Redis.
+## Tools Utilized:
 
-   - **Reference:**
-     - Redis Documentation on [Memory Compression](https://docs.redis.com/latest/ri/memory-optimizations/compression/)
+### 0.1 Backend Framework: Node.js + Express
+Node.js, known for its asynchronous and event-driven architecture, serves as the backbone of our backend system. Combined with Express.js, a robust web application framework, it provides a seamless and efficient environment for handling HTTP requests and managing the flow of data.
 
-### 3. **Data Structures Selection:**
-   - **Techniques:**
-     - Choose the appropriate Redis data structures (e.g., sets, sorted sets, hashes) based on use cases.
-     - Understand the memory characteristics of each data structure and their suitability for specific scenarios.
+### 0.2 HTTP Request Tool: POSTMAN
+POSTMAN, a widely used API development and testing tool, played a crucial role in validating the functionality and performance of our backend API. Its intuitive interface allowed for easy construction and execution of HTTP requests, aiding in the thorough testing of our image media retrieval endpoints.
 
-   - **Reference:**
-     - Redis Documentation on [Data Structures](https://docs.redis.com/latest/ri/memory-optimizations/data-structures/)
+### 0.3 Database: MySQL
+MySQL, a reliable and scalable relational database management system, was chosen as the backend database for storing image media metadata. Its structured data model and compatibility with Node.js facilitated seamless integration into our system.
 
-### 4. **Eviction Policies:**
-   - **Techniques:**
-     - Configure eviction policies to manage memory when it reaches certain thresholds.
-     - Choose the eviction policy that best suits your application's requirements.
+### 0.4 Cache: Redis (WSL)
+Redis, functioning as an in-memory data store and cache, provided the key component for optimizing image media retrieval. Installed on the Windows Subsystem for Linux (WSL), Redis ensured rapid access to frequently requested data, significantly enhancing system performance.
 
-   - **Reference:**
-     - Redis Documentation on [Eviction Policies](https://docs.redis.com/latest/ri/memory-optimizations/eviction-policies/)
+### 0.5 Data: Image
+Image media served as the primary dataset for our research. Large-sized images were selected to highlight the impact of optimization strategies on both retrieval time and storage requirements. The choice of realistic data aimed to simulate scenarios encountered in real-world image media applications.
 
-### 5. **Keys and Metadata Storage:**
-   - **Techniques:**
-     - Store metadata in an efficient format, considering JSON serialization/deserialization overhead.
-     - Choose appropriate key naming conventions for efficient key management.
+### 0.6 Compression Library: ngx-image-compress
+ngx-image-compress, a Node.js library, was employed for client-side image compression. This library allowed us to implement compression strategies directly on the client side before storing data in Redis, contributing to the overall reduction in storage requirements.
 
-   - **Reference:**
-     - Redis Documentation on [Keys and Metadata](https://docs.redis.com/latest/ri/memory-optimizations/keys-and-metadata/)
+## 1. Introduction:
+The retrieval of image media poses unique challenges in terms of speed and memory efficiency. This research focuses on optimizing image media retrieval through the strategic use of Redis as a caching layer, combined with Node.js for backend processing. The study aims to provide practical insights into improving the performance of image retrieval systems.
 
-### 6. **Connection Pooling and Optimization in Node.js:**
-   - **Techniques:**
-     - Implement connection pooling in your Node.js application to reuse database connections.
-     - Use asynchronous operations (`async/await`) to handle database queries efficiently.
+## 2. Background:
+Redis serves as a powerful in-memory database, making it an ideal choice for caching frequently accessed data. Its ability to store and retrieve data rapidly aligns well with the requirements of image media retrieval. This section discusses the role of Redis in optimizing such systems.
 
-   - **Reference:**
-     - Redis Documentation on [Connection Pooling](https://docs.redis.com/latest/ri/memory-optimizations/connection-pooling/)
+## 3. Literature Review:
+A comprehensive review of existing literature explores Redis optimization techniques, image media retrieval strategies, and backup mechanisms. This review establishes the research's position in the context of current knowledge, identifying gaps that our work aims to address.
 
-### 7. **Express.js and Postman Optimization:**
-   - **Techniques:**
-     - Implement response compression in Express.js to minimize data sent over the network.
-     - Optimize middleware usage in Express.js for minimal impact on request/response processing.
+## 4. Methodology:
+Detailing the methodology, we explain the tools utilized, including Node.js, Express, Postman, MySQL, and Redis. The research focuses on image media as the dataset, implementing compressed strategies and Node.js optimizations to enhance overall performance.
 
-   - **Reference:**
-     - Redis Documentation on [Express.js and Postman Optimization](https://docs.redis.com/latest/ri/memory-optimizations/expressjs-and-postman-optimizations/)
+## 5. Sample Implementation:
+A sample implementation is presented, featuring parameters such as image size and album ID quantity. This implementation aims to demonstrate the trade-off between retrieval time and storage size, showcasing the practical implications of the proposed optimizations.
 
-### 8. **Continuous Monitoring and Profiling:**
-   - **Techniques:**
-     - Set up continuous monitoring tools (e.g., Prometheus, Grafana) to track Redis metrics.
-     - Use Redis' built-in monitoring commands and tools to profile performance.
+## 6. Optimization Strategies:
+This section delves into the compressed strategies employed, including Redis' native compression capabilities and client-side compression using ngx-image-compress. Considerations for avoiding compression, setting thresholds, and managing overhead are discussed.
 
-   - **Reference:**
-     - Redis Documentation on [Continuous Monitoring](https://docs.redis.com/latest/ri/memory-optimizations/continuous-monitoring/)
+## 7. Node.js Optimization:
+Insights into Node.js optimization techniques are provided, focusing on asynchronous operations, error handling, and specific optimizations tailored for efficient communication with Redis.
 
-### 9. **Load Testing:**
-   - **Techniques:**
-     - Conduct load testing using tools like Apache JMeter or locust.io to simulate various scenarios and assess Redis performance under load.
+## 8. Backup Strategies:
+The implementation of backup strategies is crucial for ensuring data integrity. The paper introduces a Node.js code snippet for triggering a Redis backup on system exit and recovering from a backup file on system start.
 
-   - **Reference:**
-     - Redis Documentation on [Load Testing](https://docs.redis.com/latest/ri/memory-optimizations/load-testing/)
+## 9. Results and Discussion:
+Results from the optimization techniques are presented, comparing render times and image sizes before and after implementation. The discussion section analyzes the implications of the findings and their contribution to the overall optimization goals.
 
-### 10. **Benchmarking:**
-   - **Techniques:**
-     - Use Redis benchmarking tools or external tools to measure the performance of specific operations under different conditions.
+## 10. Conclusion:
+The conclusion summarizes key findings, contributions, and implications of the research. It reflects on the success of the optimization strategies and their potential impact on image media retrieval systems.
 
-   - **Reference:**
-     - Redis Documentation on [Benchmarking](https://docs.redis.com/latest/ri/memory-optimizations/benchmarking/)
+## 11. Future Work:
+Suggested areas for future research include exploring additional optimization techniques, scaling strategies, and integration with emerging technologies. These recommendations aim to guide further advancements in image media retrieval.
 
-### Report Structure:
-   1. **Introduction:**
-      - Brief overview of Redis and the importance of memory optimization.
+## 12. References:
+Citations and references include Redis documentation, Node.js documentation, and relevant sources discussed in the literature review.
 
-   2. **Memory Usage Optimization:**
-      - Detailed explanation of memory usage analysis and techniques.
+## Member Contributions:
+1. **Teetawat Bussabarati (Mew):** Conducted in-depth research.
+2. **Piraboon (Tutor):** Contributed to system design.
+3. **Pansaar:** Generated sample data.
 
-   3. **Compression:**
-      - Overview of Redis compression capabilities and client-side compression.
-
-   4. **Data Structures Selection:**
-      - Guidelines on choosing the right Redis data structures for specific use cases.
-
-   5. **Eviction Policies:**
-      - Explanation of eviction policies and their role in managing memory.
-
-   6. **Keys and Metadata Storage:**
-      - Strategies for efficient key naming conventions and metadata storage.
-
-   7. **Connection Pooling and Optimization in Node.js:**
-      - Techniques for optimizing database connections in Node.js.
-
-   8. **Express.js and Postman Optimization:**
-      - Best practices for optimizing Express.js and Postman usage.
-
-   9. **Continuous Monitoring and Profiling:**
-      - Implementation and benefits of continuous monitoring and profiling.
-
-   10. **Load Testing:**
-       - Importance of load testing and techniques for assessing Redis performance under load.
-
-   11. **Benchmarking:**
-       - Explanation of benchmarking tools and their role in Redis optimization.
-
-   12. **Conclusion:**
-       - Summary of key optimization strategies and their impact on Redis performance.
-
-   13. **References:**
-       - Citations and references to Redis documentation and relevant sources.
-
-By structuring your report in this way, you can provide a comprehensive guide to Redis optimization, offering detailed insights and practical techniques for improving memory efficiency.
-
-
-Physical VS Logical ASPECT:
-Physical: RAM
-Logical: Cache
+---
