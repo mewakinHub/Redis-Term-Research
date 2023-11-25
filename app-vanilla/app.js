@@ -6,18 +6,18 @@ const app = express()
 
 app.use(express.static('public'));
 
-app.get('/v/imgall', async (req, res) => {
+app.get('/imgall', async (req, res) => {
    const result = await VgetImageAll();
    res.json(result);
 });
 
-app.get('/v/imgalbum/:album', async (req, res) => {
+app.get('/imgalbum/:album', async (req, res) => {
    const album = req.params.album
    const result = await VgetImageByAlbum(album);
    res.json(result);
 });
 
-app.get('/v/imgid/:id', async (req, res) => {
+app.get('/imgid/:id', async (req, res) => {
    const id = req.params.id
    const result = await VgetImageById(id);
    res.json(result);
