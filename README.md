@@ -1,6 +1,14 @@
 # Redis Term-Research 
 
 ## Abstract
+in-memory DB: physical: RAM/logical: Cache
+*tool*
+
+- Backend: NodeJS + Express
+- HTTP request: POSTMAN
+- DB: MySQL
+- cache: Redis(WSL)
+- data: image
 
 ## Member:
 1. Teetawat Bussabarati(Mew)[@mewakin]
