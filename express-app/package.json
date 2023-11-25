@@ -1,11 +1,15 @@
 {
   "name": "test",
   "version": "1.0.0",
-  "description": "",
   "type": "module",
   "main": "index.js",
   "scripts": {
+<<<<<<< HEAD:express-app/package.json
     "test": "echo \"Error: no test specified\" && exit 1"
+=======
+    "start": "node dist/app.js",
+    "build": "babel src --out-dir dist"
+>>>>>>> 80c2ccee10e8f9a55850fda39b260f311aaa28c1:main/package.json
   },
   "keywords": [],
   "author": "",
@@ -13,5 +17,10 @@
   "dependencies": {
     "express": "^4.18.2",
     "mysql2": "^3.6.5"
+<<<<<<< HEAD:express-app/package.json
   }
+=======
+  },
+  "description": ""
+>>>>>>> 80c2ccee10e8f9a55850fda39b260f311aaa28c1:main/package.json
 }
