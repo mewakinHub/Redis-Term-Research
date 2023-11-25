@@ -6,6 +6,7 @@ Focus:
 3. Compressed LongBLOB(binary file|image), How?
 4. Compressed Algorithm
 5. Data Structure?(Not default but not main focus: just support the compression algorithm)
+6. put Redis Pseudocode into Testing System!
 
 Non-Focus: (as Normaly use) [just make it system]
 1. TTL (LRE)
@@ -14,8 +15,6 @@ Non-Focus: (as Normaly use) [just make it system]
 Case:
 1. Show, 
 2. 
-
-ถาทเตอร์ พรีไง ไอ้ภาพรันขึ้นมาทีละภาพ
 
 ### Pansaar's Task!!! (plz finished b4 2AM) [folder: DataStructure, READMENoFocus]
 - sumarize and rearrange to be paper style
