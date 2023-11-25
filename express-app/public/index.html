@@ -6,10 +6,10 @@
    <title>Express App</title>
 </head>
 <body>
-   <div id="imageResult">
+   <div id="imageResult" style="position: relative;">
       <script>
          var startTime = new Date().getTime();
-         fetch('/imageall')
+         fetch('/imgall')
             .then(response => response.json())
             .then(data => {
                const imageResultDiv = document.getElementById('imageResult');
