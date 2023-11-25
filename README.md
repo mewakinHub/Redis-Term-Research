@@ -12,8 +12,18 @@ in-memory DB: physical: RAM/logical: Cache
 *compressed strategy:*
 - zlib(file compression[zip]): overall zip
 - compressed image: ?
-- compression avoid strat:
+- avoid compression strategies:
     overhead: if too short, it's waste of time (increasing CPU utilization)
+
+*Back up strategies*
+- Back up in MySQL before Exit Terminal
+- recover from MySQL everytime system start
+
+*Sample*
+> optimized btw Time & Size
+- Image Size: Large (to show how compression help)
+- Album ID(Large Quantity): Section got Prime into Redis to show Time reduce
+
 
 ## Member:
 1. Teetawat Bussabarati(Mew)[@mewakin]
@@ -55,3 +65,6 @@ in-memory DB: physical: RAM/logical: Cache
 
 ## NodeJS vs Python 
 - Python is easier!
+
+### render speed(additional/ optional)
+https://stackoverflow.com/questions/2516665/how-can-i-monitor-the-rendering-time-in-a-browser
