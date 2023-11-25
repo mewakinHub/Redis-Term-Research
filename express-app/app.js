@@ -1,14 +1,21 @@
 import express from 'express'
-import {getAlbum, getImage} from './database.js'
+import {getAlbumAll, getImageAll} from './database.js'
 
+const port = 3000
 const app = express()
-const port = 3000;
 
-app.get('/app', async (req, res) => {
-   const result = await getImage(1)
-   res.send(result)
+app.use(express.static('public'));
+
+app.get('/albumall', async (req, res) => {
+   const result = await getAlbumAll()
+   res.json(result);
 })
 
+app.get('/imageall', async (req, res) => {
+   const result = await getImageAll();
+   res.json(result);
+});
+
 app.listen(port, () => {
-   console.log('Server is running on port', port)
+   console.log('App is running on port', port)
 })

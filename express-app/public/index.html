@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Express App</title>
+</head>
+<body>
+   <div id="imageResult">
+      <script>
+         var startTime = new Date().getTime();
+         // Fetch and display images
+         fetch('/imageall')
+            .then(response => response.json())
+            .then(data => {
+               const imageResultDiv = document.getElementById('imageResult');
+               data.forEach(item => {
+                  const imageData = item.image;
+
+                  if (imageData && imageData.type === 'Buffer' && Array.isArray(imageData.data)) {
+                     const uint8Array = new Uint8Array(imageData.data);
+                     const blob = new Blob([uint8Array], { type: 'image/png' });
+                     const dataUrl = URL.createObjectURL(blob);
+
+                     const imgElement = document.createElement('img');
+                     imgElement.src = dataUrl;
+                     imgElement.alt = 'Image';
+                     imageResultDiv.appendChild(imgElement);
+                  } else {
+                     console.error('Invalid image data:', item);
+                  }
+               });
+
+               var endTime = new Date().getTime();
+               var loadTime = endTime - startTime;
+               console.log('Page load time:', loadTime, 'milliseconds');
+            })
+            .catch(error => {
+               console.error('Error fetching image data:', error);
+            });
+      </script>
+   </div>
+</body>
+</html>
