@@ -15,6 +15,12 @@ Case:
 1. Show, 
 2. 
 
+### Pansaar's Task!!! (plz finished b4 2AM) [folder: DataStructure, READMENoFocus]
+- sumarize and rearrange to be paper style
+- how to present them 
+- (Not default but not main focus: just support the compression algorithm)
+
+
 ## Abstract
 in-memory DB: physical: RAM/logical: Cache
 *tool*
