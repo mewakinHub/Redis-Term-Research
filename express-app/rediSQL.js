@@ -7,18 +7,18 @@ const pool = mysql.createPool({
    database: 'redisresearch'
 }).promise()
 
-export async function getImageAll() {
+export async function RgetImageAll() {
    const [rows] = await pool.query('SELECT image FROM images;')
    return rows
 }
 
-export async function getImageByAlbum(album) {
+export async function RgetImageByAlbum(album) {
    const [rows] = await pool.query(`SELECT image FROM images
                                     WHERE album=?;`, [album])
    return rows
 }
 
-export async function getImageById(id) {
+export async function RgetImageById(id) {
    const [rows] = await pool.query(`SELECT image FROM images
                                     WHERE id=?;`, [id])
    return rows

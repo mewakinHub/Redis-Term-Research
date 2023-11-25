@@ -6,13 +6,12 @@
    <div id="imageResult">
       <script>
          var startTime = new Date().getTime();
-         fetch('/imgalbum/1')
+         fetch('/r/imgalbum/2')
             .then(response => response.json())
             .then(data => {
                const imageResultDiv = document.getElementById('imageResult');
                data.forEach(item => {
                   const imageData = item.image; 
-                  console.log(imageData); 
                   const uint8Array = new Uint8Array(imageData.data);
                   const blob = new Blob([uint8Array], { type: 'image/jpg' });
                   const dataUrl = URL.createObjectURL(blob);
@@ -23,7 +22,7 @@
                });
                var endTime = new Date().getTime();
                var loadTime = endTime - startTime;
-               console.log('Page load time:', loadTime, 'milliseconds');
+               console.log('Page load time:', loadTime, 'ms');
             })
             .catch(error => {
                console.error('Error fetching image data:', error);
