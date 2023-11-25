@@ -4,8 +4,7 @@ const pool = mysql.createPool({
    host: 'localhost',
    user: 'root',
    password: 'root',
-   database: 'redisresearch',
-   maxPacketSize: 1000000,
+   database: 'redisresearch'
 }).promise()
 
 export async function getImageAll() {
