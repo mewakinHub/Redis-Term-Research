@@ -165,6 +165,9 @@ function evictLRUIfNeeded() {
   });
 }
 
+# This code integrates caching, LRU management, dynamic TTL based on access count, and a mechanism to prevent cache stampedes using a lock. It provides a comprehensive approach to managing images in a cache with Redis. Adjust parameters and time values based on your specific use case and requirements.
+
+
 ***Example usage***
 const imageKey = 'profile_picture:user123';
 getCachedImage(imageKey, (err, result) => {
@@ -174,6 +177,115 @@ getCachedImage(imageKey, (err, result) => {
     console.log('Image Data:', result.imageData);
     console.log('Cache Status:', result.cacheStatus);
     // Check if LRU eviction is needed periodically (e.g., in a background task)
+    evictLRUIfNeeded();
+  }
+});
+
+### ----- Algorithm Summary -----
+
+1. LRU Implementation: updateLRU function
+
+  function updateLRU(imageKey) {
+  const timestamp = Date.now();
+  client.zadd('image_lru', timestamp, imageKey);
+}
+
+# This function updates the LRU (Least Recently Used) information by adding the imageKey to a sorted set named ***image_lru*** with the current timestamp. The sorted set is used to keep track of the order in which images were accessed.
+
+2. Access Count Functions: ***getAccessCount*** and ***incrementAccessCount*** functions
+
+  function getAccessCount(imageKey, callback) {
+  client.get(`${imageKey}:access_count`, (err, count) => {
+    callback(err, count ? parseInt(count, 10) : 0);
+  });
+}
+
+function incrementAccessCount(imageKey) {
+  client.incr(`${imageKey}:access_count`);
+}
+
+# ***getAccessCount*** retrieves the access count for a specific image key.
+# ***incrementAccessCount*** increments the access count for a specific image key.
+
+3. Caching Function: ***getCachedImage*** function
+
+function getCachedImage(imageKey, callback) {
+  client.get(imageKey, (err, imageData) => {
+    if (err) {
+      callback(err, null);
+    } else if (imageData) {
+      updateLRU(imageKey);
+      incrementAccessCount(imageKey);
+      callback(null, { imageData, cacheStatus: 'hit' });
+    } else {
+      const lockKey = `${imageKey}:lock`;
+      client.get(lockKey, (lockErr, lockValue) => {
+        if (!lockErr && !lockValue) {
+          client.setex(lockKey, 30, '1');
+          fetchImage(imageKey, (fetchErr, newImageData) => {
+            if (fetchErr) {
+              callback(fetchErr, null);
+            } else {
+              getAccessCount(imageKey, (countErr, accessCount) => {
+                if (!countErr) {
+                  const dynamicTTL = Math.max(3600, accessCount * 60);
+                  client.setex(imageKey, dynamicTTL, newImageData);
+                  updateLRU(imageKey);
+                  incrementAccessCount(imageKey);
+                  client.del(lockKey);
+                  callback(null, { imageData: newImageData, cacheStatus: 'miss' });
+                } else {
+                  client.setex(imageKey, 3600, newImageData);
+                  updateLRU(imageKey);
+                  incrementAccessCount(imageKey);
+                  client.del(lockKey);
+                  callback(null, { imageData: newImageData, cacheStatus: 'miss' });
+                }
+              });
+            }
+          });
+        } else {
+          setTimeout(() => {
+            getCachedImage(imageKey, callback);
+          }, 1000);
+        }
+      });
+    }
+  });
+}
+
+# This function checks if the image is in the cache. If it is, it updates the LRU and increments the access count, returning the cached data.
+# If the image is not in the cache, it checks for a lock to prevent cache stampede. If no lock is present, it sets a lock, fetches the image, sets it in the cache with a dynamic TTL based on access count, updates the LRU, increments the access count, and releases the lock.
+# If a lock is present, it waits for a short period and retries the cache retrieval.
+
+4. LRU Eviction Function: ***evictLRUIfNeeded*** function
+
+function evictLRUIfNeeded() {
+  const maxSize = 100;
+  client.zcard('image_lru', (err, size) => {
+    if (!err && size > maxSize) {
+      client.zpopmin('image_lru', 1, (popErr, keys) => {
+        if (!popErr && keys.length > 0) {
+          const evictedKey = keys[0];
+          client.del(evictedKey);
+          client.del(`${evictedKey}:access_count`);
+        }
+      });
+    }
+  });
+}
+
+# This function checks if the size of the LRU sorted set exceeds a specified maximum size (maxSize). If it does, it evicts the least recently used key from the cache and resets the access count for the evicted key.
+
+5. Example Usage
+
+const imageKey = 'profile_picture:user123';
+getCachedImage(imageKey, (err, result) => {
+  if (err) {
+    console.error('Error:', err);
+  } else {
+    console.log('Image Data:', result.imageData);
+    console.log('Cache Status:', result.cacheStatus);
     evictLRUIfNeeded();
   }
 });
