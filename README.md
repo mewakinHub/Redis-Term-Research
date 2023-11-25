@@ -15,6 +15,8 @@ Case:
 1. Show, 
 2. 
 
+ถาทเตอร์ พรีไง ไอ้ภาพรันขึ้นมาทีละภาพ
+
 ### Pansaar's Task!!! (plz finished b4 2AM) [folder: DataStructure, READMENoFocus]
 - sumarize and rearrange to be paper style
 - how to present them 
