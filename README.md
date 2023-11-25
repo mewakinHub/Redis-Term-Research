@@ -9,12 +9,6 @@ in-memory DB: physical: RAM/logical: Cache
 - cache: Redis(WSL)
 - data: image
 
-*compressed strategy:*
-- zlib(file compression[zip]): overall zip
-- compressed image: ngx-image-compress [https://www.npmjs.com/package/ngx-image-compress]
-- avoid compression strategies:
-    overhead: if too short, it's waste of time (increasing CPU utilization)
-
 *Back-up strategies*
 - Back up in file.rdb before Exit Terminal
 - recover from file.rdb everytime system start
@@ -24,6 +18,15 @@ in-memory DB: physical: RAM/logical: Cache
 - Image Size: Large (to show how compression help)
 - Album ID(Large Quantity): Section got Prime into Redis to show Time reduce
 
+### optimization
+*compressed strategy:*
+- zlib(file compression[zip]): overall zip
+- compressed image: ngx-image-compress [https://www.npmjs.com/package/ngx-image-compress]
+- avoid compression strategies:
+    Threshold for init compression!
+    overhead: if too short, it's waste of time (increasing CPU utilization)
+
+*NodeJS Optimization*
 
 ## Member:
 1. Teetawat Bussabarati(Mew)[@mewakin] deep research, 
