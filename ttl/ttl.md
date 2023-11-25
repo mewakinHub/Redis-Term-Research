@@ -67,50 +67,114 @@ Monitor Redis performance and analyze cache hit rates, miss rates, and memory us
 
 
 
-Node.js Example:
+### Node.js Example:
 
 const redis = require('redis');
 const client = redis.createClient();
 
+***Simple LRU Implementation using a Sorted Set***
+function updateLRU(imageKey) {
+  const timestamp = Date.now();
+  ***Add imageKey to the sorted set with the current timestamp***
+  client.zadd('image_lru', timestamp, imageKey);
+}
+
+***Function to get the access count for an image***
+function getAccessCount(imageKey, callback) {
+  client.get(`${imageKey}:access_count`, (err, count) => {
+    callback(err, count ? parseInt(count, 10) : 0);
+  });
+}
+
+***Function to increment the access count for an image***
+function incrementAccessCount(imageKey) {
+  client.incr(`${imageKey}:access_count`);
+}
+
 function getCachedImage(imageKey, callback) {
+  ***Check if the image is in the cache***
   client.get(imageKey, (err, imageData) => {
     if (err) {
       callback(err, null);
     } else if (imageData) {
-      // Image found in cache
-      callback(null, imageData);
+      ***Image found in cache, update LRU and increment access count***
+      updateLRU(imageKey);
+      incrementAccessCount(imageKey);
+      callback(null, { imageData, cacheStatus: 'hit' });
     } else {
-      // Image not in cache, fetch and set in cache with a TTL
-      fetchImage(imageKey, (err, newImageData) => {
-        if (err) {
-          callback(err, null);
+      ***Image not in cache, check if cache regeneration is already in progress***
+      const lockKey = `${imageKey}:lock`;
+      client.get(lockKey, (lockErr, lockValue) => {
+        if (!lockErr && !lockValue) {
+          ***Set a lock to indicate cache regeneration is in progress***
+          client.setex(lockKey, 30, '1'); // Set a short expiration time for the lock
+          ***Fetch and set image in cache with a dynamic TTL based on access count***
+          fetchImage(imageKey, (fetchErr, newImageData) => {
+            if (fetchErr) {
+              callback(fetchErr, null);
+            } else {
+              getAccessCount(imageKey, (countErr, accessCount) => {
+                if (!countErr) {
+                  const dynamicTTL = Math.max(3600, accessCount * 60); // Minimum TTL of 1 hour
+                  client.setex(imageKey, dynamicTTL, newImageData);
+                  ***Update LRU with the new imageKey***
+                  updateLRU(imageKey);
+                  incrementAccessCount(imageKey);
+                  ***Release the lock***
+                  client.del(lockKey);
+                  callback(null, { imageData: newImageData, cacheStatus: 'miss' });
+                } else {
+                  ***Use default TTL if access count retrieval fails***
+                  client.setex(imageKey, 3600, newImageData);
+                  updateLRU(imageKey);
+                  incrementAccessCount(imageKey);
+                  ***Release the lock***
+                  client.del(lockKey);
+                  callback(null, { imageData: newImageData, cacheStatus: 'miss' });
+                }
+              });
+            }
+          });
         } else {
-          // Set image in cache with a TTL of 1 hour
-          client.setex(imageKey, 3600, newImageData);
-          callback(null, newImageData);
+          ***Another request is already regenerating the cache, wait and retry***
+          setTimeout(() => {
+            getCachedImage(imageKey, callback);
+          }, 1000); // Retry after 1 second
         }
       });
     }
   });
 }
 
-function fetchImage(imageKey, callback) {
-  // Logic to fetch the image data from your storage
-  // For example, read from file system, database, or external API
-  // ...
-
-  // Simulating image data for the example
-  const imageData = '...'; // Actual image data
-
-  callback(null, imageData);
+***Function to evict the least recently used key if cache reaches a certain size***
+function evictLRUIfNeeded() {
+  const maxSize = 100; // Set your desired max cache size
+  client.zcard('image_lru', (err, size) => {
+    if (!err && size > maxSize) {
+      // Get and remove the least recently used key from the sorted set
+      client.zpopmin('image_lru', 1, (popErr, keys) => {
+        if (!popErr && keys.length > 0) {
+          const evictedKey = keys[0];
+          // Remove the evicted key from the cache
+          client.del(evictedKey);
+          // Also reset access count for the evicted key
+          client.del(`${evictedKey}:access_count`);
+        }
+      });
+    }
+  });
 }
 
-// Example usage
+***Example usage***
 const imageKey = 'profile_picture:user123';
-getCachedImage(imageKey, (err, imageData) => {
+getCachedImage(imageKey, (err, result) => {
   if (err) {
     console.error('Error:', err);
   } else {
-    console.log('Image Data:', imageData);
+    console.log('Image Data:', result.imageData);
+    console.log('Cache Status:', result.cacheStatus);
+    // Check if LRU eviction is needed periodically (e.g., in a background task)
+    evictLRUIfNeeded();
   }
 });
+
