@@ -50,3 +50,5 @@ Replace the current dump.rdb and any AOF files with the ones from your backup.
 3. Start Redis:
 
 Start the Redis server. It should load the data from the restored dump.rdb file.
+
+Remember that Redis backups taken while the server is running can be inconsistent if there are ongoing write operations. If possible, schedule backups during periods of low or no activity, or consider using the ***BGSAVE*** command to create a snapshot without blocking the server.
