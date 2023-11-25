@@ -6,7 +6,7 @@
    <div id="imageResult">
       <script>
          var startTime = new Date().getTime();
-         fetch('/imgall')
+         fetch('/imgalbum/1')
             .then(response => response.json())
             .then(data => {
                const imageResultDiv = document.getElementById('imageResult');
@@ -14,7 +14,7 @@
                   const imageData = item.image; 
                   console.log(imageData); 
                   const uint8Array = new Uint8Array(imageData.data);
-                  const blob = new Blob([uint8Array], { type: 'image/png' });
+                  const blob = new Blob([uint8Array], { type: 'image/jpg' });
                   const dataUrl = URL.createObjectURL(blob);
                   const imgElement = document.createElement('img');
                   imgElement.src = dataUrl;
