@@ -7,9 +7,6 @@
 -- Server version: 5.7.24
 -- PHP Version: 8.0.1
 
-SET GLOBAL net_buffer_length=1000000; 
-SET GLOBAL max_allowed_packet=1000000000;
-
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
