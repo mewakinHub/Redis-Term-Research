@@ -3,12 +3,17 @@
 ## Abstract
 in-memory DB: physical: RAM/logical: Cache
 *tool*
-
 - Backend: NodeJS + Express
 - HTTP request: POSTMAN
 - DB: MySQL
 - cache: Redis(WSL)
 - data: image
+
+*compressed strategy:*
+- zlib(file compression[zip]): overall zip
+- compressed image: ?
+- compression avoid strat:
+    overhead: if too short, it's waste of time (increasing CPU utilization)
 
 ## Member:
 1. Teetawat Bussabarati(Mew)[@mewakin]
