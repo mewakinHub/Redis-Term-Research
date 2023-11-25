@@ -1,5 +1,20 @@
 # Redis Term-Research 
 
+Focus:
+1. Pseudo Code (Cache Hit/Miss)
+2. Overhead while unzip(in case: Cache Hit)
+3. Compressed LongBLOB(binary file|image), How?
+4. Compressed Algorithm
+5. Data Structure?(Not default but not main focus: just support the compression algorithm)
+
+Non-Focus: (as Normaly use) [just make it system]
+1. TTL (LRE)
+2. Back-up
+
+Case:
+1. Show, 
+2. 
+
 ## Abstract
 in-memory DB: physical: RAM/logical: Cache
 *tool*
