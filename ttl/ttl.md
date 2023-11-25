@@ -298,5 +298,5 @@ getCachedImage(imageKey, (err, result) => {
 
 # Task!
 - competitor & reference(normal usage) research
-- make it our own(design algorithm)
+- make it our own(design algorithm) => Pansaar's Algorithm ;3
 - write the detailed in README for doc. & comment the important commands.
