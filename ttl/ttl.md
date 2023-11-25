@@ -294,3 +294,9 @@ getCachedImage(imageKey, (err, result) => {
   }
 });
 
+
+
+# Task!
+- competitor & reference(normal usage) research
+- make it our own(design algorithm)
+- write the detailed in README for doc. & comment the important commands.
