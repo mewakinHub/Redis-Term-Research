@@ -11,16 +11,16 @@ in-memory DB: physical: RAM/logical: Cache
 
 *compressed strategy:*
 - zlib(file compression[zip]): overall zip
-- compressed image: ?
+- compressed image: ngx-image-compress
 - avoid compression strategies:
     overhead: if too short, it's waste of time (increasing CPU utilization)
 
-*Back up strategies*
+*Back-up strategies*
 - Back up in MySQL before Exit Terminal
 - recover from MySQL everytime system start
 
 *Sample*
-> optimized btw Time & Size
+> optimized btw Time & Size (render time as optional)
 - Image Size: Large (to show how compression help)
 - Album ID(Large Quantity): Section got Prime into Redis to show Time reduce
 
