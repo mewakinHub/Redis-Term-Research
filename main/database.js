@@ -21,5 +21,5 @@ export async function getImage(id) {
    return rows
 }
 
-const result = await getImage(100)
+const result = await getImage(1)
 console.log(result)
