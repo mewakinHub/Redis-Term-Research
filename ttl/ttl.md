@@ -54,10 +54,10 @@ Large images might consume more memory in the cache. Consider adjusting TTL base
 Redis doesn't directly support LRU for individual keys, but you can simulate LRU behavior by using a combination of ZSET and EXPIRE commands. Store image keys in a sorted set with access timestamps and periodically remove the least recently accessed images.
 
 Example:
-# ZADD sets a timestamp for the image key
+### ZADD sets a timestamp for the image key
 ***ZADD image_access_times [timestamp] "image_key"***
 
-# EXPIRE sets the TTL for the image key
+### EXPIRE sets the TTL for the image key
 ***EXPIRE "image_key" [TTL]***
 
 6. Prevent Cache Stampede:
@@ -169,7 +169,7 @@ function evictLRUIfNeeded() {
   });
 }
 
-# This code integrates caching, LRU management, dynamic TTL based on access count, and a mechanism to prevent cache stampedes using a lock. It provides a comprehensive approach to managing images in a cache with Redis. Adjust parameters and time values based on your specific use case and requirements.
+### This code integrates caching, LRU management, dynamic TTL based on access count, and a mechanism to prevent cache stampedes using a lock. It provides a comprehensive approach to managing images in a cache with Redis. Adjust parameters and time values based on your specific use case and requirements.
 
 
 ***Example usage***
@@ -194,7 +194,7 @@ getCachedImage(imageKey, (err, result) => {
   client.zadd('image_lru', timestamp, imageKey);
 }
 
-# This function updates the LRU (Least Recently Used) information by adding the imageKey to a sorted set named ***image_lru*** with the current timestamp. The sorted set is used to keep track of the order in which images were accessed.
+### This function updates the LRU (Least Recently Used) information by adding the imageKey to a sorted set named ***image_lru*** with the current timestamp. The sorted set is used to keep track of the order in which images were accessed.
 
 2. Access Count Functions: ***getAccessCount*** and ***incrementAccessCount*** functions
 
@@ -208,8 +208,8 @@ function incrementAccessCount(imageKey) {
   client.incr(`${imageKey}:access_count`);
 }
 
-# ***getAccessCount*** retrieves the access count for a specific image key.
-# ***incrementAccessCount*** increments the access count for a specific image key.
+### ***getAccessCount*** retrieves the access count for a specific image key.
+### ***incrementAccessCount*** increments the access count for a specific image key.
 
 3. Caching Function: ***getCachedImage*** function
 
@@ -258,9 +258,9 @@ function getCachedImage(imageKey, callback) {
   });
 }
 
-# This function checks if the image is in the cache. If it is, it updates the LRU and increments the access count, returning the cached data.
-# If the image is not in the cache, it checks for a lock to prevent cache stampede. If no lock is present, it sets a lock, fetches the image, sets it in the cache with a dynamic TTL based on access count, updates the LRU, increments the access count, and releases the lock.
-# If a lock is present, it waits for a short period and retries the cache retrieval.
+### This function checks if the image is in the cache. If it is, it updates the LRU and increments the access count, returning the cached data.
+### If the image is not in the cache, it checks for a lock to prevent cache stampede. If no lock is present, it sets a lock, fetches the image, sets it in the cache with a dynamic TTL based on access count, updates the LRU, increments the access count, and releases the lock.
+### If a lock is present, it waits for a short period and retries the cache retrieval.
 
 4. LRU Eviction Function: ***evictLRUIfNeeded*** function
 
@@ -279,7 +279,7 @@ function evictLRUIfNeeded() {
   });
 }
 
-# This function checks if the size of the LRU sorted set exceeds a specified maximum size (maxSize). If it does, it evicts the least recently used key from the cache and resets the access count for the evicted key.
+### This function checks if the size of the LRU sorted set exceeds a specified maximum size (maxSize). If it does, it evicts the least recently used key from the cache and resets the access count for the evicted key.
 
 5. Example Usage
 
