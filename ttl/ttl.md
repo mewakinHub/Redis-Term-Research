@@ -26,9 +26,13 @@ SET myKey "Hello, Redis!" EX 60  # Set TTL to 60 seconds
 PERSIST myKey #Remove TTL, no expiration
 
 
-### TTL Info
+### TTL Redis Server Shut Down
 
-TTL does not continue counting down its expiration time when Redis server is terminated
+In Redis, the Time-to-Live (TTL) for a key is the amount of time that the key will exist in the database before it is automatically deleted. When the TTL of a key expires, Redis will automatically remove the key and its associated value.
+
+However, if the Redis server is shut down, all data in memory is typically lost, including information about TTLs. When the server is restarted, it will be as if the keys with TTLs expired during the downtime were never set at all. In other words, shutting down and restarting Redis effectively removes all keys, regardless of their TTLs.
+
+If you need to persist data across server restarts, you might consider using Redis persistence mechanisms like RDB snapshots or AOF (Append-Only File). These mechanisms allow you to save the dataset to disk and reload it when the server restarts. Keep in mind that using these features can impact the performance of the Redis server.
 
 ### Optimization
 
