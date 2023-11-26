@@ -16,7 +16,7 @@ app.get('/imgall', async (req, res) => {
    const rdata = await redisCli.get('images');
    if (rdata != null) {
       console.log('cache hit!')
-      res.json(JSON.parse(rdata))
+      res.send(rdata)
    }
    else {
       console.log('cache miss!')
