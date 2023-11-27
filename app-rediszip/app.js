@@ -1,6 +1,7 @@
 import mysql from 'mysql2';
 import express from 'express';
 import redis from 'redis';
+import zlib from 'zlib';
 
 const conn = mysql.createConnection({
    host: 'localhost',
@@ -15,24 +16,26 @@ redisCli.on('error', err => console.log('Redis Client Error', err));
 await redisCli.connect();
 
 //Adjustable variables
-const port = 3001;
+const port = 3002;
 const TTL = 3600;
 
 app.use(express.static('public'));
 
 app.get('/all', async (req, res) => {
-   const rdata = await redisCli.get('imgAll');
+   const rdata = await redisCli.get('zImgAll');
    if (rdata != null) {
       console.log('Cache Hit');
-      res.send(rdata);
-      redisCli.expire('imgAll', TTL);
+      const unzippedRdata = zlib.inflateSync(rdata)
+      res.send(unzippedRdata);
+      redisCli.expire('zImgAll', TTL);
    }
    else {
       console.log('Cache Miss');
       const [dbdata] = await conn.query('SELECT image FROM images;');
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson)
-      redisCli.setEx('imgAll', TTL, dbJson);
+      const zippedJson = zlib.deflateSync(dbJson);
+      redisCli.setEx('zImgAll', TTL, zippedJson);
    }
 });
 

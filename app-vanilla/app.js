@@ -1,28 +1,26 @@
-import express from 'express'
-import {getImageAll, getImageByAlbum, getImageById} from './database.js'
+import mysql from 'mysql2';
+import express from 'express';
 
-const port = 3000
-const app = express()
+const conn = mysql.createConnection({
+   host: 'localhost',
+   user: 'root',
+   password: 'root',
+   database: 'redisresearch'
+}).promise();
+
+const app = express();
+
+//Adjustable variables
+const port = 3000;
 
 app.use(express.static('public'));
 
-app.get('/imgall', async (req, res) => {
-   const result = await getImageAll();
-   res.json(result);
-});
-
-app.get('/imgalbum/:album', async (req, res) => {
-   const album = req.params.album
-   const result = await getImageByAlbum(album);
-   res.json(result);
-});
-
-app.get('/imgid/:id', async (req, res) => {
-   const id = req.params.id
-   const result = await getImageById(id);
-   res.json(result);
+app.get('/all', async (req, res) => {
+   const [dbdata] = await conn.query('SELECT image FROM images;');
+   const dbjson = JSON.stringify(dbdata);
+   res.send(dbjson);
 });
 
 app.listen(port, () => {
-   console.log('App is running on port', port)
+   console.log('Server is running on port', port);
 });
