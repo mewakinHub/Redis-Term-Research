@@ -37,21 +37,38 @@ app.get('/all', async (req, res) => {
 });
 
 app.get('/album/:album', async (req, res) => {
-   const rdata = await redisCli.get('imgAlbum')
-
    const album = req.params.album;
-   const [dbdata] = await conn.query('SELECT image FROM images WHERE album=?', [album]);
-   const dbjson = JSON.stringify(dbdata);
-   res.send(dbjson);
+   const rdata = await redisCli.get(`imgAlbum?album=${album}`);
+   if (rdata != null) {
+      console.log('Cache Hit');
+      res.send(rdata);
+      redisCli.expire(`imgAlbum?album=${album}`, TTL);
+   }
+   else {
+      console.log('Cache Miss');
+      const [dbdata] = await conn.query('SELECT image FROM images WHERE album=?', [album]);
+      const dbJson = JSON.stringify(dbdata);
+      res.send(dbJson);
+      redisCli.setEx(`imgAlbum?album=${album}`, TTL, dbJson)
+   }
 })
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   const [dbdata] = await conn.query('SELECT image FROM images WHERE id=?', [id]);
-   const dbjson = JSON.stringify(dbdata);
-   res.send(dbjson);
+   const rdata = await redisCli.get(`imgId?id=${id}`);
+   if (rdata != null) {
+      console.log('Cache Hit');
+      res.send(rdata);
+      redisCli.expire(`imgId?id=${id}`, TTL);
+   }
+   else {
+      console.log('Cache Miss');
+      const [dbdata] = await conn.query('SELECT image FROM images WHERE id=?', [id]);
+      const dbJson = JSON.stringify(dbdata);
+      res.send(dbJson);
+      redisCli.setEx(`imgId?id=${id}`, TTL, dbJson)
+   }
 })
-
 app.listen(port, () => {
    console.log('Server is running on port', port);
 });

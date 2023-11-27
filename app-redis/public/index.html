@@ -7,7 +7,7 @@
    <div id="imageResult">
       <script>
          var startTime = new Date().getTime();
-         fetch('/all')
+         fetch('/album/1')
             .then(response => response.json())
             .then(data => {
                const imageResultDiv = document.getElementById('imageResult');
