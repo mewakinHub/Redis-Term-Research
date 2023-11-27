@@ -25,7 +25,8 @@ app.get('/all', async (req, res) => {
    const rdata = await redisCli.get('zImgAll');
    if (rdata != null) {
       console.log('Cache Hit');
-      const unzippedRdata = zlib.inflateSync(rdata)
+      const unzippedRdata = zlib.inflateSync(rdata);
+      console.log('Unzipped data:', unzippedRdata);
       res.send(unzippedRdata);
       redisCli.expire('zImgAll', TTL);
    }
@@ -33,9 +34,10 @@ app.get('/all', async (req, res) => {
       console.log('Cache Miss');
       const [dbdata] = await conn.query('SELECT image FROM images;');
       const dbJson = JSON.stringify(dbdata);
-      res.send(dbJson)
       const zippedJson = zlib.deflateSync(dbJson);
+      console.log('Zipped data:', zippedJson);
       redisCli.setEx('zImgAll', TTL, zippedJson);
+      res.send(dbJson);
    }
 });
 
