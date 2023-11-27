@@ -1,48 +1,41 @@
-import express from 'express'
-import {getImageAll, getImageByAlbum, getImageById} from './database.js'
-import redis from 'redis'
+import mysql from 'mysql2';
+import express from 'express';
+import redis from 'redis';
+import zlib from 'zlib';
 
-const app = express()
-const redisCli = redis.createClient()
+const conn = mysql.createPool({
+   host: 'localhost',
+   user: 'root',
+   password: 'root',
+   database: 'redisresearch'
+}).promise();
+
+const app = express();
+const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 await redisCli.connect();
 
-const port = 3001
-const DEFAULT_EXPIRATION = 3600
+//Adjustable variables
+const port = 3001;
+const TTL = 3600;
 
 app.use(express.static('public'));
 
-app.get('/imgall', async (req, res) => {
-   const rdata = await redisCli.get('images');
+app.get('/all', async (req, res) => {
+   const rdata = await redisCli.get('imgAll');
    if (rdata != null) {
-      console.log('cache hit!')
-      res.send(rdata)
+      console.log('Cache Hit');
+      res.send(rdata);
    }
    else {
-      console.log('cache miss!')
-      const dbdata = await getImageAll();
-      res.json(dbdata);
-      redisCli.setEx('images', DEFAULT_EXPIRATION, JSON.stringify(dbdata));
+      console.log('Cache Miss');
+      const [dbdata] = await conn.query('SELECT image FROM images;');
+      const dbjson = JSON.stringify(dbdata);
+      res.send(dbjson)
+      redisCli.setEx('imgAll', TTL, dbjson);
    }
-});
-
-app.get('/imgalbum/:album', async (req, res) => {
-   const album = req.params.album
-   const result = await getImageByAlbum(album);
-   res.json(result);
-});
-
-app.get('/imgid/:id', async (req, res) => {
-   const id = req.params.id
-   const result = await getImageById(id);
-   res.json(result);
-});
-
-app.get('/test', async (req, res) => {
-   const result = await redisCli.get('key1');
-   res.send(result);
 });
 
 app.listen(port, () => {
-   console.log('App is running on port', port)
+   console.log('Server is running on port', port);
 });
