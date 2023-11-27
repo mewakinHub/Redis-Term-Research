@@ -10,10 +10,11 @@
    </script>
 </head>
 <body>
+   <h1 style="font-size: 500px;">Redis on SQL</h1>
    <div id="imageResult">
       <script>
          var startTime = new Date().getTime();
-         fetch('/imgall')
+         fetch('/all')
             .then(response => response.json())
             .then(data => {
                const imageResultDiv = document.getElementById('imageResult');

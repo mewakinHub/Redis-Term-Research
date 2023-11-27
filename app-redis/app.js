@@ -3,7 +3,7 @@ import express from 'express';
 import redis from 'redis';
 import zlib from 'zlib';
 
-const conn = mysql.createPool({
+const conn = mysql.createConnection({
    host: 'localhost',
    user: 'root',
    password: 'root',
