@@ -54,7 +54,6 @@ app.get('/all', async (req, res) => {
          const imgElement = document.createElement('compressedImage');
          imageResultRedis.appendChild(imgElement);
          });
-      });
       // mewwwwwwwwwwww
       redisCli.setEx('img', TTL, imageResultRedis);
    }
