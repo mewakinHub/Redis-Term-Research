@@ -1,6 +1,9 @@
 import mysql from 'mysql2';
 import express from 'express';
 import redis from 'redis';
+//mew
+import sharp from 'sharp';
+//mew
 
 const conn = mysql.createConnection({
    host: 'localhost',
