@@ -4,9 +4,7 @@
 </head>
 <body>
    <h1 style="font-size: 500px;">Redis</h1>
-   <span id="loadTime">
-      <p style="font-size: 300px;">Load time:</p>
-   </span>
+   <p id="loadTime" style="font-size: 300px;">Load time: </p>
    <div id="imageResult">
       <script>
          var startTime = new Date().getTime();
@@ -26,8 +24,9 @@
                });
                var endTime = new Date().getTime();
                var loadTime = endTime - startTime;
-               const loadTimeDiv = document.getElementById('loadTime');
-               loadTimeDiv.appendChild()
+               const loadTimeP = document.getElementById('loadTime');
+               loadTimeP.append(loadTime);
+               loadTimeP.append(' ms');
                fetch('/loadtime/'+loadTime);
             })
             .catch(error => {
