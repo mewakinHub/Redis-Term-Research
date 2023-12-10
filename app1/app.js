@@ -1,7 +1,6 @@
 import mysql from 'mysql2';
 import express from 'express';
 import redis from 'redis';
-import zlib from 'zlib';
 
 const conn = mysql.createConnection({
    host: 'localhost',
@@ -16,7 +15,7 @@ redisCli.on('error', err => console.log('Redis Client Error', err));
 await redisCli.connect();
 
 //Adjustable variables
-const port = 3002;
+const port = 3001;
 const TTL = 3600;
 
 app.use(express.static('public'));
@@ -27,60 +26,54 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 });
 
 app.get('/all', async (req, res) => {
-   const rdata = await redisCli.get('zImg');
+   const rdata = await redisCli.get('img');
    if (rdata != null) {
-      console.log('Cache Hit');
-      const unzippedRdata = zlib.inflateSync(Buffer.from(rdata, 'base64'));
-      res.send(unzippedRdata);
-      redisCli.expire('zImg', TTL);
+      console.log('Cache Hit: all');
+      res.send(rdata);
+      redisCli.expire('img', TTL);
    }
    else {
-      console.log('Cache Miss');
+      console.log('Cache Miss: all');
       const [dbdata] = await conn.query('SELECT image FROM images;');
       const dbJson = JSON.stringify(dbdata);
-      res.send(dbJson);
-      const zippedJson = zlib.deflateSync(dbJson);
-      redisCli.setEx('zImg', TTL, zippedJson.toString('base64'));
+      res.send(dbJson)
+      redisCli.setEx('img', TTL, dbJson);
    }
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   const rdata = await redisCli.get(`zImg?album=${album}`);
+   const rdata = await redisCli.get(`img?album=${album}`);
    if (rdata != null) {
       console.log('Cache Hit: album', album);
-      const unzippedRdata = zlib.inflateSync(Buffer.from(rdata, 'base64'));
-      res.send(unzippedRdata);
-      redisCli.expire(`zImg?album=${album}`, TTL);
+      res.send(rdata);
+      redisCli.expire(`img?album=${album}`, TTL);
    }
    else {
       console.log('Cache Miss: album', album);
       const [dbdata] = await conn.query('SELECT image FROM images WHERE album=?', [album]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
-      const zippedJson = zlib.deflateSync(dbJson);
-      redisCli.setEx(`zImg?album=${album}`, TTL, zippedJson.toString('base64'));
+      redisCli.setEx(`img?album=${album}`, TTL, dbJson)
    }
 });
 
 app.get('/id/:id', async (req, res) => {
-   const album = req.params.album;
-   const rdata = await redisCli.get(`zImg?album=${album}`);
+   const id = req.params.id;
+   const rdata = await redisCli.get(`imgId?id=${id}`);
    if (rdata != null) {
       console.log('Cache Hit: album', album);
-      const unzippedRdata = zlib.inflateSync(Buffer.from(rdata, 'base64'));
-      res.send(unzippedRdata);
-      redisCli.expire(`zImg?album=${album}`, TTL);
+      res.send(rdata);
+      redisCli.expire(`img?id=${id}`, TTL);
    }
    else {
-      console.log('Cache Miss: album', album);
-      const [dbdata] = await conn.query('SELECT image FROM images WHERE album=?', [album]);
+      console.log('Cache Miss');
+      const [dbdata] = await conn.query('SELECT image FROM images WHERE id=?', [id]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
-      const zippedJson = zlib.deflateSync(dbJson);
-      redisCli.setEx(`zImg?album=${album}`, TTL, zippedJson.toString('base64'));
+      redisCli.setEx(`img?id=${id}`, TTL, dbJson)
    }
-});
+})
 
 app.listen(port, () => {
    console.log('Server is running on port', port);
