@@ -7,22 +7,26 @@ const port = 1001;
 const TTL = 3600;
 
 //Initialize base
+
 const conn = mysql.createConnection({
    host: 'localhost',
    user: 'root',
    password: 'root',
    database: 'redisresearch'
 }).promise();
+
 const app = express();
-var startTime = 0;
-var endTime = 0;
-var responseTime = 0;
-var loadTime = 0;
 app.use(express.static('public'));
 app.listen(port, () => {
    console.log('Server is running on port', port);
    console.log('---------------');
 });
+
+var startTime = 0;
+var endTime = 0;
+var responseTime = 0;
+var loadTime = 0;
+
 app.get('/loadtime/:loadtime', async (req, res) => {
    loadTime = req.params.loadtime;
    if (responseTime != 0) {
@@ -31,11 +35,12 @@ app.get('/loadtime/:loadtime', async (req, res) => {
       console.log('---------------');
    }
 });
+
 function RecordFetchTime() {
    endTime = new Date().getTime();
    responseTime = endTime - startTime;
    console.log('Fetch response time:', responseTime, 'ms');
-}
+};
 
 //Initialize Redis
 const redisCli = redis.createClient();
@@ -44,16 +49,14 @@ await redisCli.connect();
 
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
-   var startTime = new Date().getTime();
+   startTime = new Date().getTime();
    const key = rediskey+params;
    const rdata = await redisCli.get(key);
    if (rdata != null) {
       console.log('Key:', key);
       console.log('Cache: Hit');
       res.send(rdata);
-      var endTime = new Date().getTime();
-      responseTime = endTime - startTime;
-      console.log('Fetch response time:', responseTime, 'ms');
+      RecordFetchTime();
       redisCli.expire(key, TTL);
    }
    else {
@@ -62,13 +65,11 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       const [dbdata] = await conn.query(sqlquery, [params]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
-      var endTime = new Date().getTime();
-      responseTime = endTime - startTime;
-      console.log('Fetch response time:', responseTime, 'ms');
+      RecordFetchTime();
       redisCli.setEx(key, TTL, dbJson);
       console.log('• setEx done');
    }
-}
+};
 
 //API endpoints
 
