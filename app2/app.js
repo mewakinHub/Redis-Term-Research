@@ -37,7 +37,26 @@ app.get('/all', async (req, res) => {
       const [dbdata] = await conn.query('SELECT image FROM images;');
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson)
-      redisCli.setEx('img', TTL, dbJson);
+      // mewwwwwwwwwww
+      [dbdata].forEach(item => {
+         const imageData = item.image; 
+         const uint8Array = new Uint8Array(imageData.data);
+         const blob = new Blob([uint8Array], { type: 'image/jpg' });
+         const dataUrl = URL.createObjectURL(blob);
+
+         // Apply compression decision algorithm
+         const compressionRatio = calculateCompressionRatio(blob.width, blob.height, blob.size, blob.complexity);
+
+         // Use compression algorithm (Sharp in this case)
+         const compressedImage = await compressImage(blob, compressionRatio);
+
+         // Store compressed image in Redis
+         const imgElement = document.createElement('compressedImage');
+         imageResultRedis.appendChild(imgElement);
+         });
+      });
+      // mewwwwwwwwwwww
+      redisCli.setEx('img', TTL, imageResultRedis);
    }
 });
 
