@@ -71,7 +71,7 @@ app.get('/id/:id', async (req, res) => {
       const [dbdata] = await conn.query('SELECT image FROM images WHERE id=?', [id]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
-      redisCli.setEx(`img?id=${id}`, TTL, dbJson)
+      redisCli.setEx(`img?id=${id}`, TTL, dbJson);
    }
 })
 
