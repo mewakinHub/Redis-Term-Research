@@ -28,6 +28,32 @@ app.get('/loadtime/:loadtime', async (req, res) => {
    console.log('Load time:', loadtime, 'ms');
 });
 
+// mew
+// Utility Functions
+function calculateCompressionRatio(width, height, size) {
+   // compression ratio equation
+   const avgDimension = (width + height) / 2;
+   const compressionRatio = avgDimension / size;
+
+   // Adjust compression ratio based on your criteria
+   const adjustedCompressionRatio = applyAdjustments(compressionRatio);
+
+   return adjustedCompressionRatio;
+}
+
+function applyAdjustments(compressionRatio) {
+   // Your logic for adjusting the compression ratio
+   // This could involve thresholds, weights, or any other criteria
+   return compressionRatio;
+}
+ 
+async function compressImage(blob, compressionRatio) {
+   // Your image compression logic
+   // Adjust compression parameters based on the compression ratio
+   return compressedImage;
+ }
+// mew
+
 app.get('/all', async (req, res) => {
    const rdata = await redisCli.get('img');
    if (rdata != null) {
@@ -44,11 +70,10 @@ app.get('/all', async (req, res) => {
       [dbdata].forEach(item => {
          const imageData = item.image; 
          const uint8Array = new Uint8Array(imageData.data);
+         // create an Image object and load the Blob as its source to access properties like width or height
          const blob = new Blob([uint8Array], { type: 'image/jpg' });
-         const dataUrl = URL.createObjectURL(blob);
-
          // Apply compression decision algorithm
-         const compressionRatio = calculateCompressionRatio(blob.width, blob.height, blob.size, blob.complexity);
+         const compressionRatio = calculateCompressionRatio(blob.width, blob.height, blob.size);
 
          // Use compression algorithm (Sharp in this case)
          const compressedImage = await compressImage(blob, compressionRatio);
