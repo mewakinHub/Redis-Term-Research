@@ -1,6 +1,6 @@
 # Notice:
-1. These steps are for Windows only. Might not apply to other operating systems.
-2. {} are adjustable variables.
+- These steps are for Windows only. Might not apply to other operating systems.
+- {} are adjustable variables.
 
 # Redis Installation
 1. Type in command prompt (Admin): `wsl --install` to install WSL
