@@ -45,11 +45,11 @@ function RecordFetchTime() {
 };
 
 //Initialize Redis
-
 const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 await redisCli.connect();
 
+//Exit protocol
 process.on('SIGINT', async () => {
    console.log('Exiting...');
    await redisCli.bgSave();
