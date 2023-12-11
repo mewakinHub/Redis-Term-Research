@@ -51,7 +51,7 @@ await redisCli.connect();
 process.on('SIGINT', async () => {
    console.log('Exiting...');
    await redisCli.bgSave();
-   console.log('Saved snapshot to dump.rdb');
+   console.log('• Saved snapshot to dump.rdb');
    process.exit();
 });
 
