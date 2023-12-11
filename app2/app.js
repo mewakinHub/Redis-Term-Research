@@ -54,11 +54,10 @@ app.get('/all', async (req, res) => {
          const compressedImage = await compressImage(blob, compressionRatio);
 
          // Store compressed image in Redis
-         const imgElement = document.createElement('compressedImage');
-         imageResultRedis.appendChild(imgElement);
-         });
+         imageResultRedis.push(compressedImage);
+      });
       // mewwwwwwwwwwww
-      redisCli.setEx('img', TTL, imageResultRedis);
+      redisCli.setEx('img', TTL, JSON.stringify(imageResultRedis));
    }
 });
 
