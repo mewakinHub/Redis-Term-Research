@@ -1,8 +1,6 @@
 import mysql from 'mysql2';
 import express from 'express';
 import redis from 'redis';
-import fs from 'fs';
-import path from 'path';
 
 //Adjustable variables
 const port = 1001;
@@ -45,13 +43,10 @@ function RecordFetchTime() {
 };
 
 //Initialize Redis
+
 const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 await redisCli.connect();
-
-const __filename = new URL(import.meta.url).pathname;
-const __dirname = path.dirname(__filename);
-const redisDataFilePath = path.join(__dirname, 'redisData.rdb');
 
 process.on('SIGINT', async () => {
    console.log('Exiting...');
