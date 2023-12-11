@@ -66,7 +66,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       res.send(rdata);
       RecordFetchTime();
       const oldTTL = await redisCli.ttl(key);
-      console.log('• Reset key', key, 'TTL from', String(oldTTL), 'to', String(TTL));
+      console.log('• Reset TTL of key', key, 'from', String(oldTTL), 'to', String(TTL));
       redisCli.expire(key, TTL);
    }
    else {
@@ -83,11 +83,6 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
 
 //API endpoints
 
-app.get('/flush', async (req, res) => {
-   redisCli.flushAll();
-   res.redirect('/');
-});
-
 app.get('/all', async (req, res) => {
    FetchQuery(res, 'img', 'SELECT image FROM images;', '');
 });
@@ -100,4 +95,9 @@ app.get('/album/:album', async (req, res) => {
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
    FetchQuery(res, 'imgId', 'SELECT image FROM images WHERE id=?', id);
+});
+
+app.get('/flush', async (req, res) => {
+   redisCli.flushAll();
+   res.send('');
 });

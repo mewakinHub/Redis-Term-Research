@@ -8,7 +8,9 @@
    <div id="imageResult">
       <script>
          var startTime = new Date().getTime();
+         //Change data fetch here
          fetch('/all')
+         //
             .then(response => response.json())
             .then(data => {
                const imageResultDiv = document.getElementById('imageResult');
