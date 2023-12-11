@@ -29,7 +29,7 @@ app.get('/loadtime/:loadtime', async (req, res) => {
    loadTime = req.params.loadtime;
    if (responseTime != 0) {
       console.log('Page render time:', String(loadTime-responseTime), 'ms');
-      console.log('Total load time:', loadTime, 'ms');
+      console.log('Total load time:', parseInt(loadTime), 'ms');
       console.log('---------------');
    }
 });
@@ -44,10 +44,9 @@ function RecordFetchTime() {
 async function FetchQuery(res, sqlquery, params) {
    startTime = new Date().getTime();
    const [dbdata] = await conn.query(sqlquery, [params]);
-   const dbjson = JSON.stringify(dbdata);
-   res.send(dbjson);
+   res.send(dbdata);
    RecordFetchTime();
-}
+};
 
 //API endpoints
 

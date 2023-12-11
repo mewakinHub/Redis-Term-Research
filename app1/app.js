@@ -1,6 +1,8 @@
 import mysql from 'mysql2';
 import express from 'express';
 import redis from 'redis';
+import fs from 'fs';
+import path from 'path';
 
 //Adjustable variables
 const port = 1001;
@@ -31,7 +33,7 @@ app.get('/loadtime/:loadtime', async (req, res) => {
    loadTime = req.params.loadtime;
    if (responseTime != 0) {
       console.log('Page render time:', String(loadTime-responseTime), 'ms');
-      console.log('Total load time:', loadTime, 'ms');
+      console.log('Total load time:', parseInt(loadTime), 'ms');
       console.log('---------------');
    }
 });
@@ -46,6 +48,17 @@ function RecordFetchTime() {
 const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 await redisCli.connect();
+
+const __filename = new URL(import.meta.url).pathname;
+const __dirname = path.dirname(__filename);
+const redisDataFilePath = path.join(__dirname, 'redisData.rdb');
+
+process.on('SIGINT', async () => {
+   console.log('Exiting...');
+   await redisCli.bgSave();
+   console.log('Saved snapshot to dump.rdb');
+   process.exit();
+});
 
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
@@ -63,9 +76,9 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       console.log('Key:', key);
       console.log('Cache: Miss');
       const [dbdata] = await conn.query(sqlquery, [params]);
-      const dbJson = JSON.stringify(dbdata);
-      res.send(dbJson);
+      res.send(dbdata);
       RecordFetchTime();
+      const dbJson = JSON.stringify(dbdata);
       redisCli.setEx(key, TTL, dbJson);
       console.log('• setEx done');
    }
@@ -79,10 +92,10 @@ app.get('/all', async (req, res) => {
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'img?album=', 'SELECT image FROM images WHERE album=?', album);
+   FetchQuery(res, 'imgAlbum', 'SELECT image FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'img?id=', 'SELECT image FROM images WHERE id=?', id);
+   FetchQuery(res, 'imgId', 'SELECT image FROM images WHERE id=?', id);
 });
