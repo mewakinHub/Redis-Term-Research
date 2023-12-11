@@ -18,7 +18,7 @@
 5. Go to import tab
 6. Import these in order: database.sql -> maxbuffer.sql -> images1.sql -> images2.sql. The files are in SQL folder in this project directory.
 
-# To start app:
+# Starting the app
 1. Launch MAMP to start MySQL server.
 2. Start an WSL terminal inside this project directory and type `redis-server` to start redis server.
 3. Start a generic terminal (Powershell/Command Prompt/Git bash) and get into app version of choice, for example: `cd app1`
