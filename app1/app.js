@@ -18,7 +18,7 @@ const conn = mysql.createConnection({
 const app = express();
 app.use(express.static('public'));
 app.listen(port, () => {
-   console.log('Server is running on port', port);
+   console.log('• Server is running on port', port);
    console.log('---------------');
 });
 
@@ -31,7 +31,7 @@ app.get('/loadtime/:loadtime', async (req, res) => {
    loadTime = req.params.loadtime;
    if (responseTime != 0) {
       console.log('Page render time:', String(loadTime-responseTime), 'ms');
-      console.log('Total load time:', parseInt(loadTime), 'ms');
+      console.log('Total load time:', loadTime, 'ms');
       console.log('---------------');
    }
 });
@@ -65,6 +65,8 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       console.log('Cache: Hit');
       res.send(rdata);
       RecordFetchTime();
+      const oldTTL = await redisCli.ttl(key);
+      console.log('• Reset key', key, 'TTL from', String(oldTTL), 'to', String(TTL));
       redisCli.expire(key, TTL);
    }
    else {
@@ -75,11 +77,16 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       RecordFetchTime();
       const dbJson = JSON.stringify(dbdata);
       redisCli.setEx(key, TTL, dbJson);
-      console.log('• setEx done');
+      console.log('• Set key', key, 'with TTL', String(TTL));
    }
 };
 
 //API endpoints
+
+app.get('/flush', async (req, res) => {
+   redisCli.flushAll();
+   res.redirect('/');
+});
 
 app.get('/all', async (req, res) => {
    FetchQuery(res, 'img', 'SELECT image FROM images;', '');

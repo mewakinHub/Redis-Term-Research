@@ -16,7 +16,7 @@ const conn = mysql.createConnection({
 const app = express();
 app.use(express.static('public'));
 app.listen(port, () => {
-   console.log('Server is running on port', port);
+   console.log('• Server is running on port', port);
    console.log('---------------');
 });
 
@@ -29,7 +29,7 @@ app.get('/loadtime/:loadtime', async (req, res) => {
    loadTime = req.params.loadtime;
    if (responseTime != 0) {
       console.log('Page render time:', String(loadTime-responseTime), 'ms');
-      console.log('Total load time:', parseInt(loadTime), 'ms');
+      console.log('Total load time:', loadTime, 'ms');
       console.log('---------------');
    }
 });

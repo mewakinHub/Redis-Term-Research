@@ -18,7 +18,7 @@
 
 # To start app:
 1. Launch MAMP to start MySQL server.
-2. Start an WSL terminal and type `redis-server` to start redis server. Do not close this terminal
+2. Start an WSL terminal inside this project directory and type `redis-server` to start redis server. Do not close this terminal
 3. Start another WSL terminal and type `redis-cli` to manually send commands to Redis
 3. Start a generic terminal (Powershell/Command Prompt/Git bash) and get into app version of choice, for example: `cd app1`
 4. Make sure that app version has node_modules installed in the directory. If not, type `npm install`
