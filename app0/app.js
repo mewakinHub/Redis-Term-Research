@@ -4,8 +4,7 @@ import express from 'express';
 //Adjustable variables
 const port = 1000;
 
-//Initialize base
-
+//Initialize MySQL
 const conn = mysql.createConnection({
    host: 'localhost',
    user: 'root',
@@ -13,12 +12,15 @@ const conn = mysql.createConnection({
    database: 'redisresearch'
 }).promise();
 
+//Initialize Express
 const app = express();
 app.use(express.static('public'));
 app.listen(port, () => {
    console.log('• Server is running on port', port);
    console.log('---------------');
 });
+
+//Initialize Timestamps
 
 var startTime = 0;
 var endTime = 0;
