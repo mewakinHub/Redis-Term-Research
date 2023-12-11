@@ -45,8 +45,8 @@ function RecordFetchTime() {
 //Fetch function
 async function FetchQuery(res, sqlquery, params) {
    startTime = new Date().getTime();
-   const [dbdata] = await conn.query(sqlquery, [params]);
-   res.send(dbdata);
+   const [dbData] = await conn.query(sqlquery, [params]);
+   res.send(dbData);
    RecordFetchTime();
 };
 

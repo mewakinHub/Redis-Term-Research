@@ -1,9 +1,10 @@
 import mysql from 'mysql2';
 import express from 'express';
 import redis from 'redis';
+import lz4 from 'lz4';
 
 //Adjustable variables
-const port = 1001;
+const port = 1002;
 const TTL = 3600;
 
 //Initialize MySQL
@@ -61,10 +62,12 @@ process.on('SIGINT', async () => {
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
-   const rJson = await redisCli.get(key);
-   if (rJson != null) {
+   const rComp = await redisCli.get(key);
+   if (rComp != null) {
       console.log('Key:', key);
       console.log('Cache: Hit');
+      //Decompress from lz4
+      const rJson = lz4.decodeBlock(Buffer.from(rComp, 'base64'));
       res.send(rJson);
       RecordFetchTime();
       const oldTTL = await redisCli.ttl(key);
@@ -78,7 +81,9 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       res.send(dbData);
       RecordFetchTime();
       const dbJson = JSON.stringify(dbData);
-      redisCli.setEx(key, TTL, dbJson);
+      //Compress with lz4
+      const dbComp = lz4.encodeBlock(dbJson).toString('base64');
+      redisCli.setEx(key, TTL, dbComp);
       console.log('• Set key', key, 'with TTL', String(TTL), 's');
    }
 };
@@ -86,17 +91,17 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
 //API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'img', 'SELECT image FROM images;', '');
+   FetchQuery(res, 'Limg', 'SELECT image FROM images;', '');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'imgAlbum', 'SELECT image FROM images WHERE album=?', album);
+   FetchQuery(res, 'LimgAlbum', 'SELECT image FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'imgId', 'SELECT image FROM images WHERE id=?', id);
+   FetchQuery(res, 'LimgId', 'SELECT image FROM images WHERE id=?', id);
 });
 
 app.get('/flush', async (req, res) => {
