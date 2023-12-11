@@ -16,7 +16,7 @@
 3. Launch MAMP to start MySQL server
 4. Type in url "http://localhost/phpMyAdmin/?lang=en" to access phpMyAdmin interface
 5. Go to import tab
-6. Import these in order: database.sql -> maxbuffer.sql -> images1.sql -> images2.sql
+6. Import these in order: database.sql -> maxbuffer.sql -> images1.sql -> images2.sql. The files are in SQL folder in this project directory.
 
 # To start app:
 1. Launch MAMP to start MySQL server.
