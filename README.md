@@ -7,8 +7,8 @@
 2. Install with UNIX username "user" and password "user"
 3. Open a WSL terminal inside VS Code and type in: `sudo apt-get update` to update package information
 4. Install Redis. Type in WSL terminal: `sudo apt-get install redis`
-5. Disable Redis-server automatic startup: `sudo systemctl disable redis`
-6. Stop Redis-server in case it has already automatically started: `sudo systemctl stop redis`
+5. Stop Redis-server in case it has already automatically started: `sudo systemctl stop redis`
+6. Disable Redis-server automatic startup: `sudo systemctl disable redis`
 
 ## MAMP Installation and sample database insertion
 1. Open a browser and go to https://www.mamp.info/en/downloads/ and download MAMP
