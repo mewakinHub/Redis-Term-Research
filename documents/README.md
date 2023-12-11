@@ -21,13 +21,13 @@
 # To start app:
 1. Launch MAMP to start MySQL server.
 2. Start an WSL terminal inside this project directory and type `redis-server` to start redis server.
-3. Start another WSL terminal and type `redis-cli` to manually send commands to Redis
 3. Start a generic terminal (Powershell/Command Prompt/Git bash) and get into app version of choice, for example: `cd app1`
 4. Make sure that app version has node_modules installed in the directory. If not, type `npm install`
 4. From the generic terminal, type `node app` to start the app in localhost with port number specified in the terminal.
 5. Open a browser and type in url "localhost:{portnumber}"
 
 # Using the app
+- You can manually send commands to Redis by starting a new WSL terminal and type in `redis-cli`, then you can start sending commands. For example: to check all key-values, type in `keys *`
 - Change the data fetch type in file "public/index.js". There are 3 types: `fetch('/all')`, `fetch('/album/{album}')`, `fetch('/id/{id}')`
 - Do not shutdown computer while an app process terminal is running, as the key-values will not be saved. To exit properly, press Ctrl+C inside the running terminal. This will trigger the backend protocol, and will restore the snapshot when redis-server is started again.
 - To flush all the key-values, type `flushall` in redis-cli, or connect to "localhost:{portnumber}/flush". This is helpful when the source SQL database is updated so that the cache will not be outdated data.
