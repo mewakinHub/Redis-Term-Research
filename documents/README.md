@@ -1,4 +1,6 @@
-# Redis Installation (Step for Windows)
+# Notice: Steps for Windows only. Might not apply to other operating systems.
+
+# Redis Installation
 1. Type in command prompt (Admin): `wsl --install` to install WSL
 2. Install with UNIX username "user" and password "user"
 3. Open a WSL terminal inside VS Code and type in: `sudo apt-get update` to update package information
