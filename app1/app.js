@@ -14,7 +14,6 @@ app.use(express.static('public'));
 app.listen(port, () => {
    console.log('---------------');
    console.log('• Server is running on port', port);
-   console.log('---------------');
 });
 
 //Initialize MySQL
@@ -53,7 +52,7 @@ redisCli.on('error', err => console.log('Redis Client Error', err));
 redisCli.connect();
 
 //Obsolete Redis cache prevention procedure
-const program = async () => {
+async () => {
    const sqlEventConn = mysql.createConnection({
       host: 'localhost',
       user: 'root',
@@ -63,8 +62,10 @@ const program = async () => {
    const instance = new MySQLEvents(sqlEventConn, {startAtEnd: true});
  
    instance.start()
-      .then(() => console.log('I\'m running!'))
-      .catch(err => console.error('Something bad happened', err));
+      .then(() => {
+         console.log('• MySQLEvent listening to change in DB')
+      })
+      .catch(err => console.error('MySQLEvent failed to start.', err));
  
    instance.addTrigger({
       name: 'detectChange',
@@ -79,12 +80,8 @@ const program = async () => {
    
    instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
    instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
- };
+};
  
- program()
-   .then(() => console.log('Waiting for database events...'))
-   .catch(console.error);
-
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();

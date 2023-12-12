@@ -2,7 +2,7 @@
 - These steps are for Windows only. Might not apply to other operating systems.
 - {} are adjustable variables.
 
-## Redis Installation
+## Redis installation
 1. Type in command prompt (Admin): `wsl --install` to install WSL
 2. Install with UNIX username "user" and password "user"
 3. Open a WSL terminal inside VS Code and type in: `sudo apt-get update` to update package information
@@ -10,13 +10,19 @@
 5. Stop Redis-server in case it has already automatically started: `sudo systemctl stop redis`
 6. Disable Redis-server automatic startup: `sudo systemctl disable redis`
 
-## MAMP Installation and sample database insertion
+## MAMP installation, configuration, and sample database insertion
 1. Open a browser and go to https://www.mamp.info/en/downloads/ and download MAMP
 2. Install using the exe
-3. Launch MAMP to start MySQL server
-4. Type in url "http://localhost/phpMyAdmin/?lang=en" to access phpMyAdmin interface
-5. Go to import tab
-6. Import these in order: database.sql -> maxbuffer.sql -> images1.sql -> images2.sql. The files are in SQL folder in this project directory.
+3. Go to MAMP installation directory, default is C:\MAMP\conf\mysql, and open my.ini. Carefully do the following:
+   - Add `log-bin=mysql-bin` below collation-server=utf8_general_ci
+   - Change binlog_format to `row`
+   - Change max_allowed_packet to `100M`
+   - Change net_buffer_length to `100M`
+   - Save the changes
+4. Launch MAMP to start MySQL server
+5. In browser go to http://localhost/phpMyAdmin/?lang=en to access phpMyAdmin interface
+6. Go to import tab
+7. Import these in order: database.sql -> images1.sql -> images2.sql. The files are in SQL folder in this project directory.
 
 ## Starting the app
 1. Launch MAMP to start MySQL server.
@@ -31,3 +37,7 @@
 - Change the data fetch type in file "public/index.js". There are 3 types: `fetch('/all')`, `fetch('/album/{album}')`, `fetch('/id/{id}')`
 - Do not shutdown computer while an app process terminal is running, as the key-values will not be saved. To exit properly, press Ctrl+C inside the running terminal. This will trigger the backend protocol, and will restore the snapshot when redis-server is started again.
 - To flush all the key-values, type `flushall` in redis-cli, or connect to "localhost:{portnumber}/flush". This is helpful when the source SQL database is updated so that the cache will not be outdated data.
+
+## App version folders
+- app0: Normal SQL
+- app1: Our system with Redis on top of SQL
