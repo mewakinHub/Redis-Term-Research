@@ -36,8 +36,8 @@
 - You can manually send commands to Redis by starting a new WSL terminal and type in `redis-cli`, then you can start sending commands. For example: to check all key-values, type in `keys *`
 - Change the data fetch type in file "public/index.js". There are 3 types: `fetch('/all')`, `fetch('/album/{album}')`, `fetch('/id/{id}')`
 - Do not shutdown computer while an app process terminal is running, as the key-values will not be saved. To exit properly, press Ctrl+C inside the running terminal. This will trigger the backend protocol, and will restore the snapshot when redis-server is started again.
-- To flush all the key-values, type `flushall` in redis-cli, or connect to "localhost:{portnumber}/flush". This is helpful when the source SQL database is updated so that the cache will not be outdated data.
+- To manually flush all the key-values, type `flushall` in redis-cli.
 
 ## App version folders
 - app0: Normal SQL
-- app1: Our system with Redis on top of SQL
+- app1: Our Redis system on top of SQL
