@@ -58,6 +58,13 @@ process.on('SIGINT', async () => {
 });
 
 //Fetch function
+
+async function PrimeCache(key, dbData) {
+   const dbJson = JSON.stringify(dbData);
+   redisCli.setEx(key, TTL, dbJson);
+   console.log('• Set key', key, 'with TTL', String(TTL), 's');
+}
+
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
@@ -77,11 +84,10 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       const [dbData] = await conn.query(sqlquery, [params]);
       res.send(dbData);
       RecordFetchTime();
-      const dbJson = JSON.stringify(dbData);
-      redisCli.setEx(key, TTL, dbJson);
-      console.log('• Set key', key, 'with TTL', String(TTL), 's');
+      PrimeCache(key, dbData);
    }
 };
+
 
 //API endpoints
 
