@@ -36,22 +36,24 @@ function calculateCompressionRatio(width, height, size) {
    const compressionRatio = avgDimension / size;
 
    // Adjust compression ratio based on your criteria
-   const adjustedCompressionRatio = applyAdjustments(compressionRatio);
+   const adjustedCompressionRatio = (compressionRatio);
 
    return adjustedCompressionRatio;
 }
-
-function applyAdjustments(compressionRatio) {
-   // Your logic for adjusting the compression ratio
-   // This could involve thresholds, weights, or any other criteria
-   return compressionRatio;
-}
  
 async function compressImage(blob, compressionRatio) {
-   // Your image compression logic
-   // Adjust compression parameters based on the compression ratio
-   return compressedImage;
- }
+   // image compression logic
+   try {
+      const compressedImage = await sharp(blob)
+      .jpeg({ quality: 50 })
+      .toBuffer();
+
+      return compressedImage;
+   } catch (error) {
+      console.error(error);
+      throw error; // Rethrow the error to handle it outside
+   }
+}
 // mew
 
 app.get('/all', async (req, res) => {
@@ -67,19 +69,23 @@ app.get('/all', async (req, res) => {
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson)
       // mewwwwwwwwwww
-      [dbdata].forEach(item => {
-         const imageData = item.image; 
-         const uint8Array = new Uint8Array(imageData.data);
-         // create an Image object and load the Blob as its source to access properties like width or height
-         const blob = new Blob([uint8Array], { type: 'image/jpg' });
-         // Apply compression decision algorithm
-         const compressionRatio = calculateCompressionRatio(blob.width, blob.height, blob.size);
-
-         // Use compression algorithm (Sharp in this case)
-         const compressedImage = await compressImage(blob, compressionRatio);
-
-         // Store compressed image in Redis
-         imageResultRedis.push(compressedImage);
+      const imageResultRedis = [];
+      [dbdata].forEach(image => {
+         if (image) {
+            const uint8Array = new Uint8Array(image.data);
+            // create an Image object and load the Blob as its source to access properties like width or height
+            const blob = new Blob([uint8Array], { type: 'image/jpg' });
+            // Apply compression decision algorithm
+            const compressionRatio = calculateCompressionRatio(blob.width, blob.height, blob.size);
+      
+            // Use compression algorithm (Sharp in this case)
+            const compressedImage = compressImage(blob, compressionRatio);
+      
+            // Store compressed image in Redis
+            imageResultRedis.push(compressedImage);
+         } else {
+            console.log('Image is undefined or null');
+         }
       });
       // mewwwwwwwwwwww
       redisCli.setEx('img', TTL, JSON.stringify(imageResultRedis));
