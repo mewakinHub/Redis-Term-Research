@@ -30,27 +30,39 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 
 // mew
 // Utility Functions
-function calculateCompressionRatio(width, height, size) {
+function calculateCompressionRatio(buffer) {
+   console.log('Buffer length:', buffer.length);
+   
+   sharp(buffer)
+      .metadata()
+      .then(metadata => {
+         const { width, height, size, format, channels, exif, icc, density, hasProfile, space } = metadata;
+         console.log(`Image Metadata:`, { width, height, size, format, channels, exif, icc, density, hasProfile, space });
+      })
+      .catch(err => {
+         console.error('Error extracting metadata:', err);
+      });
+
    // compression ratio equation
    const avgDimension = (width + height) / 2;
    const compressionRatio = avgDimension / size;
 
    // Adjust compression ratio based on your criteria
-   const adjustedCompressionRatio = (compressionRatio);
+   const adjustedCompressionRatio = compressionRatio; // You can adjust this based on your criteria
 
    return adjustedCompressionRatio;
 }
+
  
-async function compressImage(blob, compressionRatio) {
-   // image compression logic
+async function compressImage(buffer, compressionRatio) {
    try {
-      const compressedImage = await sharp(blob)
-      .jpeg({ quality: 50 })
-      .toBuffer();
+      const compressedImage = await sharp(buffer)
+         .jpeg({ quality: 50 })
+         .toBuffer();
 
       return compressedImage;
    } catch (error) {
-      console.error(error);
+      console.error('Error compressing image:', error);
       throw error; // Rethrow the error to handle it outside
    }
 }
@@ -66,28 +78,40 @@ app.get('/all', async (req, res) => {
    else {
       console.log('Cache Miss: all');
       const [dbdata] = await conn.query('SELECT image FROM images;');
-      const dbJson = JSON.stringify(dbdata);
-      res.send(dbJson)
+      res.send(dbdata)
       // mewwwwwwwwwww
       const imageResultRedis = [];
-      [dbdata].forEach(image => {
-         if (image) {
-            const uint8Array = new Uint8Array(image.data);
-            // create an Image object and load the Blob as its source to access properties like width or height
-            const blob = new Blob([uint8Array], { type: 'image/jpg' });
-            // Apply compression decision algorithm
-            const compressionRatio = calculateCompressionRatio(blob.width, blob.height, blob.size);
-      
-            // Use compression algorithm (Sharp in this case)
-            const compressedImage = compressImage(blob, compressionRatio);
-      
-            // Store compressed image in Redis
-            imageResultRedis.push(compressedImage);
-         } else {
-            console.log('Image is undefined or null');
+
+      // Ensure dbdata is not an empty array
+      if (Array.isArray(dbdata) && dbdata.length > 0) {
+         for (const item of dbdata) {
+            if (item && item.image) {
+               const uint8Array = new Uint8Array(item.image.data);
+               const buffer = Buffer.from(uint8Array);
+               console.log('Buffer length:', buffer.length);
+
+               // Check if the buffer is not empty before processing
+               if (buffer.length > 0) {
+                  // Apply compression decision algorithm
+                  const compressionRatio = calculateCompressionRatio(buffer);
+
+                  // Use compression algorithm (Sharp in this case)
+                  const compressedImage = await compressImage(buffer, compressionRatio);
+
+                  // Store compressed image in Redis
+                  imageResultRedis.push(compressedImage);
+               } else {
+                  console.log('Buffer is empty for an image');
+               }
+            } else {
+               console.log('Item or image is undefined or null');
+            }
          }
-      });
+      } else {
+         console.log('No images found in the database');
+      }
       // mewwwwwwwwwwww
+      // Store compressed images in Redis
       redisCli.setEx('img', TTL, JSON.stringify(imageResultRedis));
    }
 });

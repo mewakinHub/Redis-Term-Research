@@ -68,6 +68,7 @@
     "serve-static": "^1.15.0",
     "set-function-length": "^1.1.1",
     "setprototypeof": "^1.2.0",
+    "sharp": "^0.33.0",
     "side-channel": "^1.0.4",
     "sqlstring": "^2.3.3",
     "statuses": "^2.0.1",
