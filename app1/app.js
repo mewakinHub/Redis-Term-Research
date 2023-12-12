@@ -71,7 +71,7 @@ const program = async () => {
       expression: 'redisresearch.images.*',
       statement: MySQLEvents.STATEMENTS.ALL,
       onEvent: async (event) => {
-         console.log('• Change in DB detected:',event);
+         console.log('• Change in DB detected');
          redisCli.flushAll();
          console.log('• Flushed all Redis keys');
       },
