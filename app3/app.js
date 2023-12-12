@@ -5,7 +5,7 @@ import pako from 'pako';
 import { rejects } from 'assert';
 
 //Adjustable variables
-const port = 1002;
+const port = 1003;
 const TTL = 3600;
 
 //Initialize MySQL
