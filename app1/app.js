@@ -1,18 +1,11 @@
-import mysql from 'mysql2';
-import express from 'express';
-import redis from 'redis';
+const express = require('express');
+const mysql = require('mysql2');
+const redis = require('redis');
+const MySQLEvents = require('@rodrigogs/mysql-events');
 
 //Adjustable variables
 const port = 1001;
 const TTL = 3600;
-
-//Initialize MySQL
-const conn = mysql.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'root',
-   database: 'redisresearch'
-}).promise();
 
 //Initialize Express
 const app = express();
@@ -22,6 +15,14 @@ app.listen(port, () => {
    console.log('---------------');
 });
 
+//Initialize MySQL
+const sqlConn = mysql.createConnection({
+   host: 'localhost',
+   user: 'root',
+   password: 'root',
+   database: 'redisresearch'
+}).promise();
+
 //Initialize Timestamps
 
 var startTime = 0;
@@ -29,10 +30,10 @@ var endTime = 0;
 var responseTime = 0;
 var loadTime = 0;
 
-function RecordFetchTime() {
+function RecordResponseTime() {
    endTime = new Date().getTime();
    responseTime = endTime - startTime;
-   console.log('Fetch response time:', responseTime, 'ms');
+   console.log('Response time:', responseTime, 'ms');
 };
 
 app.get('/loadtime/:loadtime', async (req, res) => {
@@ -47,24 +48,9 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 //Initialize Redis
 const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
-await redisCli.connect();
-
-//Exit protocol
-process.on('SIGINT', async () => {
-   console.log('Exiting...');
-   await redisCli.bgSave();
-   console.log('• Saved snapshot to dump.rdb');
-   process.exit();
-});
+redisCli.connect();
 
 //Fetch function
-
-async function PrimeCache(key, dbData) {
-   const dbJson = JSON.stringify(dbData);
-   redisCli.setEx(key, TTL, dbJson);
-   console.log('• Set key', key, 'with TTL', String(TTL), 's');
-}
-
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
@@ -73,7 +59,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       console.log('Key:', key);
       console.log('Cache: Hit');
       res.send(rJson);
-      RecordFetchTime();
+      RecordResponseTime();
       const oldTTL = await redisCli.ttl(key);
       console.log('• Reset TTL of key', key, 'from', String(oldTTL), 's to', String(TTL), 's');
       redisCli.expire(key, TTL);
@@ -81,13 +67,14 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    else {
       console.log('Key:', key);
       console.log('Cache: Miss');
-      const [dbData] = await conn.query(sqlquery, [params]);
+      const [dbData] = await sqlConn.query(sqlquery, [params]);
       res.send(dbData);
-      RecordFetchTime();
-      PrimeCache(key, dbData);
+      RecordResponseTime();
+      const dbJson = JSON.stringify(dbData);
+      redisCli.setEx(key, TTL, dbJson);
+      console.log('• Set key', key, 'with TTL', String(TTL), 's');
    }
 };
-
 
 //API endpoints
 
@@ -108,4 +95,14 @@ app.get('/id/:id', async (req, res) => {
 app.get('/flush', async (req, res) => {
    redisCli.flushAll();
    res.send('');
+});
+
+//Exit procedure
+process.on('SIGINT', async () => {
+   console.log('Exiting...');
+   await redisCli.bgSave();
+   console.log('• Saved snapshot to dump.rdb');
+   sqlConn.end();
+   redisCli.quit();
+   process.exit();
 });

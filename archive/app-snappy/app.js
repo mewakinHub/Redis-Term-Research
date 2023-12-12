@@ -3,7 +3,7 @@ import express from 'express';
 import redis from 'redis';
 import snappy from 'snappy';
 
-const conn = mysql.createConnection({
+const sqlConn = mysql.createConnection({
    host: 'localhost',
    user: 'root',
    password: 'root',
@@ -36,7 +36,7 @@ app.get('/all', async (req, res) => {
    }
    else {
       console.log('Cache Miss');
-      const [dbdata] = await conn.query('SELECT image FROM images;');
+      const [dbdata] = await sqlConn.query('SELECT image FROM images;');
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson)
       const compData = await snappy.compress(dbJson);
@@ -54,7 +54,7 @@ app.get('/album/:album', async (req, res) => {
    }
    else {
       console.log('Cache Miss');
-      const [dbdata] = await conn.query('SELECT image FROM images WHERE album=?', [album]);
+      const [dbdata] = await sqlConn.query('SELECT image FROM images WHERE album=?', [album]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
       redisCli.setEx(`imgAlbum?album=${album}`, TTL, dbJson)
@@ -71,7 +71,7 @@ app.get('/id/:id', async (req, res) => {
    }
    else {
       console.log('Cache Miss');
-      const [dbdata] = await conn.query('SELECT image FROM images WHERE id=?', [id]);
+      const [dbdata] = await sqlConn.query('SELECT image FROM images WHERE id=?', [id]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
       redisCli.setEx(`imgId?id=${id}`, TTL, dbJson)

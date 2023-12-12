@@ -8,7 +8,7 @@ const port = 1002;
 const TTL = 3600;
 
 //Initialize MySQL
-const conn = mysql.createConnection({
+const sqlConn = mysql.createConnection({
    host: 'localhost',
    user: 'root',
    password: 'root',
@@ -30,7 +30,7 @@ var endTime = 0;
 var responseTime = 0;
 var loadTime = 0;
 
-function RecordFetchTime() {
+function RecordResponseTime() {
    endTime = new Date().getTime();
    responseTime = endTime - startTime;
    console.log('Fetch response time:', responseTime, 'ms');
@@ -69,7 +69,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       //Decompress from lz4
       const rJson = lz4.decodeBlock(Buffer.from(rComp, 'base64'));
       res.send(rJson);
-      RecordFetchTime();
+      RecordResponseTime();
       const oldTTL = await redisCli.ttl(key);
       console.log('• Reset TTL of key', key, 'from', String(oldTTL), 's to', String(TTL), 's');
       redisCli.expire(key, TTL);
@@ -77,9 +77,9 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    else {
       console.log('Key:', key);
       console.log('Cache: Miss');
-      const [dbData] = await conn.query(sqlquery, [params]);
+      const [dbData] = await sqlConn.query(sqlquery, [params]);
       res.send(dbData);
-      RecordFetchTime();
+      RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
       //Compress with lz4
       const dbComp = lz4.encodeBlock(dbJson).toString('base64');

@@ -3,7 +3,7 @@ import express from 'express';
 import redis from 'redis';
 import zlib from 'zlib';
 
-const conn = mysql.createConnection({
+const sqlConn = mysql.createConnection({
    host: 'localhost',
    user: 'root',
    password: 'root',
@@ -36,7 +36,7 @@ app.get('/all', async (req, res) => {
    }
    else {
       console.log('Cache Miss');
-      const [dbdata] = await conn.query('SELECT image FROM images;');
+      const [dbdata] = await sqlConn.query('SELECT image FROM images;');
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
       const zippedJson = zlib.deflateSync(dbJson);
@@ -55,7 +55,7 @@ app.get('/album/:album', async (req, res) => {
    }
    else {
       console.log('Cache Miss: album', album);
-      const [dbdata] = await conn.query('SELECT image FROM images WHERE album=?', [album]);
+      const [dbdata] = await sqlConn.query('SELECT image FROM images WHERE album=?', [album]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
       const zippedJson = zlib.deflateSync(dbJson);
@@ -74,7 +74,7 @@ app.get('/id/:id', async (req, res) => {
    }
    else {
       console.log('Cache Miss: album', album);
-      const [dbdata] = await conn.query('SELECT image FROM images WHERE album=?', [album]);
+      const [dbdata] = await sqlConn.query('SELECT image FROM images WHERE album=?', [album]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
       const zippedJson = zlib.deflateSync(dbJson);

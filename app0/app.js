@@ -1,16 +1,8 @@
-import mysql from 'mysql2';
 import express from 'express';
+import mysql from 'mysql2';
 
 //Adjustable variables
 const port = 1000;
-
-//Initialize MySQL
-const conn = mysql.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'root',
-   database: 'redisresearch'
-}).promise();
 
 //Initialize Express
 const app = express();
@@ -19,6 +11,14 @@ app.listen(port, () => {
    console.log('• Server is running on port', port);
    console.log('---------------');
 });
+
+//Initialize MySQL
+const sqlConn = mysql.createConnection({
+   host: 'localhost',
+   user: 'root',
+   password: 'root',
+   database: 'redisresearch'
+}).promise();
 
 //Initialize Timestamps
 
@@ -36,18 +36,18 @@ app.get('/loadtime/:loadtime', async (req, res) => {
    }
 });
 
-function RecordFetchTime() {
+function RecordResponseTime() {
    endTime = new Date().getTime();
    responseTime = endTime - startTime;
-   console.log('Fetch response time:', responseTime, 'ms');
+   console.log('Response time:', responseTime, 'ms');
 };
 
 //Fetch function
 async function FetchQuery(res, sqlquery, params) {
    startTime = new Date().getTime();
-   const [dbData] = await conn.query(sqlquery, [params]);
+   const [dbData] = await sqlConn.query(sqlquery, [params]);
    res.send(dbData);
-   RecordFetchTime();
+   RecordResponseTime();
 };
 
 //API endpoints
@@ -64,4 +64,11 @@ app.get('/album/:album', async (req, res) => {
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
    FetchQuery(res, 'SELECT image FROM images WHERE id=?', id);
+});
+
+//Exit procedure
+process.on('SIGINT', async () => {
+   console.log('Exiting...');
+   sqlConn.end();
+   process.exit();
 });
