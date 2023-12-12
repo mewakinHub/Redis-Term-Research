@@ -1,5 +1,5 @@
 import express from 'express';
-import mysql from 'mysql2';
+import mysql2 from 'mysql2';
 
 //Adjustable variables
 const port = 1000;
@@ -8,12 +8,13 @@ const port = 1000;
 const app = express();
 app.use(express.static('public'));
 app.listen(port, () => {
+   console.log('---------------');
    console.log('• Server is running on port', port);
    console.log('---------------');
 });
 
 //Initialize MySQL
-const sqlConn = mysql.createConnection({
+const sqlConn = mysql2.createConnection({
    host: 'localhost',
    user: 'root',
    password: 'root',
@@ -69,6 +70,7 @@ app.get('/id/:id', async (req, res) => {
 //Exit procedure
 process.on('SIGINT', async () => {
    console.log('Exiting...');
+   console.log('---------------');
    sqlConn.end();
    process.exit();
 });

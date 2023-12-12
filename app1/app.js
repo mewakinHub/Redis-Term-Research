@@ -1,6 +1,8 @@
 const express = require('express');
-const mysql = require('mysql2');
+const mysql2 = require('mysql2');
+const mysql = require('mysql');
 const redis = require('redis');
+const MySQLEvents = require('@rodrigogs/mysql-events');
 
 //Adjustable variables
 const port = 1001;
@@ -10,12 +12,13 @@ const TTL = 3600;
 const app = express();
 app.use(express.static('public'));
 app.listen(port, () => {
+   console.log('---------------');
    console.log('• Server is running on port', port);
    console.log('---------------');
 });
 
 //Initialize MySQL
-const sqlConn = mysql.createConnection({
+const sqlConn = mysql2.createConnection({
    host: 'localhost',
    user: 'root',
    password: 'root',
@@ -48,6 +51,39 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 redisCli.connect();
+
+//Obsolete Redis cache prevention procedure
+const program = async () => {
+   const sqlEventConn = mysql.createConnection({
+      host: 'localhost',
+      user: 'root',
+      password: 'root',
+   });
+ 
+   const instance = new MySQLEvents(sqlEventConn, {startAtEnd: true});
+ 
+   instance.start()
+      .then(() => console.log('I\'m running!'))
+      .catch(err => console.error('Something bad happened', err));
+ 
+   instance.addTrigger({
+      name: 'detectChange',
+      expression: 'redisresearch.images.*',
+      statement: MySQLEvents.STATEMENTS.ALL,
+      onEvent: async (event) => {
+         console.log('• Change in DB detected:',event);
+         redisCli.flushAll();
+         console.log('• Flushed all Redis keys');
+      },
+   });
+   
+   instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
+   instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
+ };
+ 
+ program()
+   .then(() => console.log('Waiting for database events...'))
+   .catch(console.error);
 
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
@@ -101,6 +137,7 @@ process.on('SIGINT', async () => {
    console.log('Exiting...');
    await redisCli.bgSave();
    console.log('• Saved snapshot to dump.rdb');
+   console.log('---------------');
    sqlConn.end();
    redisCli.quit();
    process.exit();
