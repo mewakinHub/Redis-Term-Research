@@ -1,7 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2');
 const redis = require('redis');
-const MySQLEvents = require('@rodrigogs/mysql-events');
 
 //Adjustable variables
 const port = 1001;
