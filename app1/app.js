@@ -3,10 +3,12 @@ const mysql2 = require('mysql2');
 const mysql = require('mysql');
 const redis = require('redis');
 const MySQLEvents = require('@rodrigogs/mysql-events');
+const childprocess = require('child_process');
 
 //Adjustable variables
 const port = 1001;
-const TTL = 3600;
+const baseTTL = 3600;
+const maxTTL = 21600;
 
 //Initialize Express
 const app = express();
@@ -67,7 +69,7 @@ instance.start()
 
 //Obsolete Redis cache prevention procedure
 instance.addTrigger({
-   name: 'detectChange',
+   name: 'DetectChange',
    expression: 'redisresearch.images.*',
    statement: MySQLEvents.STATEMENTS.ALL,
    onEvent: async (event) => {
@@ -80,6 +82,30 @@ instance.addTrigger({
 instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
 instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
 
+//TTL function
+async function AddTTL(key) {
+   const currentTTL = await redisCli.ttl(key);
+   var newTTL = currentTTL + baseTTL;
+   if (newTTL > maxTTL) {
+      newTTL = maxTTL;
+   }
+   redisCli.expire(key, newTTL);
+   console.log('• Changed TTL of key', key, 'from', String(currentTTL), 's to', String(newTTL), 's');
+}
+
+//Send to child function
+function PrimeCache(key, value) {
+   const child = childprocess.fork('appchild.js');
+   child.on('message', (message) => {
+      if (message === 'done') {
+         console.log('•••••');
+         console.log('Set key', key, 'with TTL', String(baseTTL), 's');
+         console.log('•••••');
+      }
+   });
+   child.send({key, baseTTL, value});
+}
+
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
@@ -90,9 +116,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       console.log('Cache: Hit');
       res.send(rJson);
       RecordResponseTime();
-      const oldTTL = await redisCli.ttl(key);
-      console.log('• Reset TTL of key', key, 'from', String(oldTTL), 's to', String(TTL), 's');
-      redisCli.expire(key, TTL);
+      AddTTL(key);
    }
    else {
       console.log('Key:', key);
@@ -101,8 +125,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       res.send(dbData);
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
-      redisCli.setEx(key, TTL, dbJson);
-      console.log('• Set key', key, 'with TTL', String(TTL), 's');
+      PrimeCache(key, dbJson);
    }
 };
 

@@ -1,5 +1,5 @@
-import express from 'express';
-import mysql2 from 'mysql2';
+const express = require('express');
+const mysql2 = require('mysql2');
 
 //Adjustable variables
 const port = 1000;

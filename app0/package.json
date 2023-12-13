@@ -2,7 +2,6 @@
   "name": "app0",
   "version": "1.0.0",
   "description": "",
-  "type": "module",
   "main": "app.js",
   "keywords": [],
   "author": "",
