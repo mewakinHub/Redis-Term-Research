@@ -23,6 +23,7 @@
                   const imgElement = document.createElement('img');
                   imgElement.src = dataUrl;
                   imgElement.alt = 'Image';
+                  imgElement.loading = 'lazy';
                   imageResultDiv.appendChild(imgElement);
                });
                var endTime = new Date().getTime();

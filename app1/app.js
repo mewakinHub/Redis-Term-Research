@@ -93,19 +93,6 @@ async function AddTTL(key) {
    console.log('• Changed TTL of key', key, 'from', String(currentTTL), 's to', String(newTTL), 's');
 }
 
-//Send to child function
-function PrimeCache(key, value) {
-   const child = childprocess.fork('appchild.js');
-   child.on('message', (message) => {
-      if (message === 'done') {
-         console.log('•••••');
-         console.log('Set key', key, 'with TTL', String(baseTTL), 's');
-         console.log('•••••');
-      }
-   });
-   child.send({key, baseTTL, value});
-}
-
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
@@ -125,7 +112,10 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       res.send(dbData);
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
-      PrimeCache(key, dbJson);
+      redisCli.setEx(key, baseTTL, dbJson);
+      console.log('•••••');
+      console.log('Set key', key, 'with TTL', String(baseTTL), 's');
+      console.log('•••••');
    }
 };
 
