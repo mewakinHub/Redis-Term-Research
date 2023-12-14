@@ -16,8 +16,8 @@
 3. Go to MAMP installation directory, default is C:\MAMP\conf\mysql, and open my.ini. Carefully do the following:
    - Add `log-bin=mysql-bin` below collation-server=utf8_general_ci
    - Change binlog_format to `row`
-   - Change max_allowed_packet to `100M`
-   - Change net_buffer_length to `100M`
+   - Change max_allowed_packet below mysqld, not mysqldump, to `100M`
+   - Change net_buffer_length below mysqld, not mysqldump, to `100M`
    - Save the changes
 4. Launch MAMP to start MySQL server
 5. In browser go to http://localhost/phpMyAdmin/?lang=en to access phpMyAdmin interface
