@@ -97,15 +97,14 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
    const rJson = await redisCli.get(key);
+   console.log('Key:', key);
    if (rJson != null) {
-      console.log('Key:', key);
       console.log('Cache: Hit');
       res.send(rJson);
       RecordResponseTime();
       AddTTL(key);
    }
    else {
-      console.log('Key:', key);
       console.log('Cache: Miss');
       const [dbData] = await sqlConn.query(sqlquery, [params]);
       res.send(dbData);

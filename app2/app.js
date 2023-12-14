@@ -129,8 +129,8 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
    const rData = await redisCli.get(key);
+   console.log('Key:', key);
    if (rData != null) {
-      console.log('Key:', key);
       console.log('Cache: Hit');
       // Parse the JSON string from the cache
       // const cachedData = JSON.parse(rData);
@@ -153,7 +153,6 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       AddTTL(key);
    }
    else {
-      console.log('Key:', key);
       console.log('Cache: Miss');
       const [dbData] = await sqlConn.query(sqlquery, [params]);
       res.send(dbData);
