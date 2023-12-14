@@ -92,39 +92,6 @@ async function AddTTL(key) {
    console.log('• Changed TTL of key', key, 'from', String(currentTTL), 's to', String(newTTL), 's');
 }
 
-<<<<<<< Updated upstream
-=======
-//Compression function
-
-function calculateCompressionRatio(width, height, bufferLength) {
-   const avgDimension = (width + height) / 2;
-   const compressionRatio = (avgDimension * 100) / bufferLength;
-   const adjustedCompressionRatio = applyAdjustments(compressionRatio);
-   return adjustedCompressionRatio;
-}
-
-function applyAdjustments(compressionRatio) {
-   return Math.max(compressionRatio, 0.2);
-}
-
-async function compressImage(blob, compressionRatio) {
-   try {
-      // Your image compression logic using Sharp
-      const compressedBuffer = await sharp(blob)
-         .jpeg({ quality: Math.floor(compressionRatio * 100) })
-         .toBuffer();
-
-      // Convert the compressed image buffer to Uint8Array
-      const compressedImage = new Uint8Array(compressedBuffer);
-
-      return compressedImage;
-   } catch (error) {
-      console.error('Error compressing image:', error);
-      throw error;
-   }
-}
-
->>>>>>> Stashed changes
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
@@ -140,9 +107,14 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    else {
       console.log('Cache: Miss');
       const [dbData] = await sqlConn.query(sqlquery, [params]);
-      res.send(dbData);
+      const dbBase64 = dbData.map(item => {
+         const imageData = item.image;
+         const base64Image = Buffer.from(imageData).toString('base64');
+         return { ...item, image: base64Image };
+      });
+      res.send(dbBase64);
       RecordResponseTime();
-      const dbJson = JSON.stringify(dbData);
+      const dbJson = JSON.stringify(dbBase64);
       redisCli.setEx(key, baseTTL, dbJson);
       console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
    }
@@ -156,12 +128,12 @@ app.get('/all', async (req, res) => {
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'imgAlbum', 'SELECT image FROM images WHERE album=?', album);
+   FetchQuery(res, 'img-album', 'SELECT image FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'imgId', 'SELECT image FROM images WHERE id=?', id);
+   FetchQuery(res, 'img-id', 'SELECT image FROM images WHERE id=?', id);
 });
 
 //Exit procedure

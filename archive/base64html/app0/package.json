@@ -1,0 +1,14 @@
+{
+  "name": "app0",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.6.5",
+    "node": "^21.2.0"
+  }
+}
