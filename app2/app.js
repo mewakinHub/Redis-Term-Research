@@ -66,7 +66,7 @@ app.get('/all', async (req, res) => {
       // const convertedData = cachedData.map(item => {
       //    const imageData = item.image;
 
-      //    // Assuming imageData is a normal string
+         // Assuming imageData is a normal string
       //    const uint8Array = new TextEncoder().encode(imageData);
 
          res.send(rdata);
