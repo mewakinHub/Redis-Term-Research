@@ -92,15 +92,61 @@ async function AddTTL(key) {
    console.log('• Changed TTL of key', key, 'from', String(currentTTL), 's to', String(newTTL), 's');
 }
 
+//Compression function
+
+function calculateCompressionRatio(width, height, bufferLength) {
+   const avgDimension = (width + height) / 2;
+   const compressionRatio = (avgDimension * 100) / bufferLength;
+   const adjustedCompressionRatio = applyAdjustments(compressionRatio);
+   return adjustedCompressionRatio;
+}
+
+function applyAdjustments(compressionRatio) {
+   return Math.max(compressionRatio, 0.4);
+}
+
+async function compressImage(blob, compressionRatio) {
+   try {
+      // Your image compression logic using Sharp
+      const compressedBuffer = await sharp(blob)
+         .jpeg({ quality: Math.floor(compressionRatio * 100) })
+         .toBuffer();
+
+      // Convert the compressed image buffer to Uint8Array
+      const compressedImage = new Uint8Array(compressedBuffer);
+
+      return compressedImage;
+   } catch (error) {
+      console.error('Error compressing image:', error);
+      throw error;
+   }
+}
+
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
-   const rJson = await redisCli.get(key);
-   if (rJson != null) {
+   const rData = await redisCli.get(key);
+   if (rData != null) {
       console.log('Key:', key);
       console.log('Cache: Hit');
-      res.send(rJson);
+      // Parse the JSON string from the cache
+      // const cachedData = JSON.parse(rData);
+
+      // Convert each item's image data back to Uint8Array
+      // const convertedData = cachedData.map(item => {
+      //    const imageData = item.image;
+
+      //    // Assuming imageData is a normal string
+      //    const uint8Array = new TextEncoder().encode(imageData);
+
+         res.send(rData);
+         // res.send{ image: uint8Array};
+         // return { image: uint8Array };
+      // }
+      // );
+
+      //res.send(JSON.stringify(convertedData));
       RecordResponseTime();
       AddTTL(key);
    }
@@ -110,26 +156,44 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       const [dbData] = await sqlConn.query(sqlquery, [params]);
       res.send(dbData);
       RecordResponseTime();
-      const dbJson = JSON.stringify(dbData);
-      redisCli.setEx(key, baseTTL, dbJson);
-      console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
-   }
+      for (const item of dbData) {
+         const imageData = item.image;
+         const blob = Buffer.from(imageData);
+
+         if (blob.length > 0) {
+            const { width, height } = sizeOf(blob);
+            const compressionRatio = calculateCompressionRatio(width, height, blob.length);
+            const compressedImage = await compressImage(blob, compressionRatio);
+            imageResultRedis.push(compressedImage);
+            // console.log('Width:', width);
+            // console.log('Height:', height);
+            // console.log('Uint8Array length:', blob.length);
+            console.log(compressionRatio);
+            // console.log('Image result for Redis:', imageResultRedis);
+            redisCli.setEx(key, TTL, JSON.stringify(imageResultRedis));
+            console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
+            // console.log(imageResultRedis, "Stringified")
+         } else {
+            console.log('Buffer is empty for an image');
+         }
+      }
+   };
 };
 
 //API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'img', 'SELECT image FROM images;', '');
+   FetchQuery(res, 'Cimg', 'SELECT image FROM images;', '');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'imgAlbum', 'SELECT image FROM images WHERE album=?', album);
+   FetchQuery(res, 'CimgAlbum', 'SELECT image FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'imgId', 'SELECT image FROM images WHERE id=?', id);
+   FetchQuery(res, 'CimgId', 'SELECT image FROM images WHERE id=?', id);
 });
 
 //Exit procedure

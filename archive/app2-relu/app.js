@@ -28,20 +28,20 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 
 function calculateCompressionRatio(width, height, bufferLength) {
    const avgDimension = (width + height) / 2;
-   const compressionRatio = avgDimension / bufferLength;
+   const compressionRatio = (avgDimension * 100) / bufferLength;
    const adjustedCompressionRatio = applyAdjustments(compressionRatio);
    return adjustedCompressionRatio;
 }
 
 function applyAdjustments(compressionRatio) {
-   return Math.max(compressionRatio, 0.1);
+   return Math.max(compressionRatio, 0.4);
 }
 
 async function compressImage(blob, compressionRatio) {
    try {
       // Your image compression logic using Sharp
       const compressedBuffer = await sharp(blob)
-         .jpeg({ quality: 50 })
+         .jpeg({ quality: Math.floor(compressionRatio * 100) })
          .toBuffer();
 
       // Convert the compressed image buffer to Uint8Array
@@ -56,23 +56,24 @@ async function compressImage(blob, compressionRatio) {
 
 
 app.get('/all', async (req, res) => {
-   const imageResultRedis = [];
    const rdata = await redisCli.get('img');
    if (rdata != null) {
       console.log('Cache Hit: all');
       // Parse the JSON string from the cache
-      const cachedData = JSON.parse(rdata);
+      // const cachedData = JSON.parse(rdata);
 
-// Convert each item's image data back to Uint8Array
-   const convertedData = cachedData.map(item => {
-      const imageData = item.image;
+   // Convert each item's image data back to Uint8Array
+      // const convertedData = cachedData.map(item => {
+      //    const imageData = item.image;
 
-      // Assuming imageData is a normal string
-      const uint8Array = new TextEncoder().encode(imageData);
+      //    // Assuming imageData is a normal string
+      //    const uint8Array = new TextEncoder().encode(imageData);
 
-      return { image: uint8Array };
-   });
-
+         res.send(rdata);
+         // res.send{ image: uint8Array};
+         // return { image: uint8Array };
+      // }
+      // );
 
       res.send(JSON.stringify(convertedData));
       redisCli.expire('img', TTL);
@@ -80,6 +81,7 @@ app.get('/all', async (req, res) => {
    
    else {
       console.log('Cache Miss: all');
+      const imageResultRedis = [];
       const [dbdata] = await conn.query('SELECT image FROM images;');
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
@@ -95,7 +97,8 @@ app.get('/all', async (req, res) => {
             imageResultRedis.push(compressedImage);
             // console.log('Width:', width);
             // console.log('Height:', height);
-            console.log('Uint8Array length:', blob.length);
+            // console.log('Uint8Array length:', blob.length);
+            console.log(compressionRatio);
             // console.log('Image result for Redis:', imageResultRedis);
             redisCli.setEx('img', TTL, JSON.stringify(imageResultRedis));
             // console.log(imageResultRedis, "Stringified")
