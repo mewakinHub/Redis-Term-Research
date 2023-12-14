@@ -1,9 +1,8 @@
 import mysql from 'mysql2';
 import express from 'express';
 import redis from 'redis';
-//mew
 import sharp from 'sharp';
-//mew
+import sizeOf from 'image-size';
 
 const conn = mysql.createConnection({
    host: 'localhost',
@@ -17,7 +16,6 @@ const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 await redisCli.connect();
 
-//Adjustable variables
 const port = 3002;
 const TTL = 3600;
 
@@ -28,91 +26,86 @@ app.get('/loadtime/:loadtime', async (req, res) => {
    console.log('Load time:', loadtime, 'ms');
 });
 
-// mew
-// Utility Functions
-function calculateCompressionRatio(buffer) {
-   console.log('Buffer length:', buffer.length);
-   
-   sharp(buffer)
-      .metadata()
-      .then(metadata => {
-         const { width, height, size, format, channels, exif, icc, density, hasProfile, space } = metadata;
-         console.log(`Image Metadata:`, { width, height, size, format, channels, exif, icc, density, hasProfile, space });
-      })
-      .catch(err => {
-         console.error('Error extracting metadata:', err);
-      });
-
-   // compression ratio equation
+function calculateCompressionRatio(width, height, bufferLength) {
    const avgDimension = (width + height) / 2;
-   const compressionRatio = avgDimension / size;
-
-   // Adjust compression ratio based on your criteria
-   const adjustedCompressionRatio = compressionRatio; // You can adjust this based on your criteria
-
+   const compressionRatio = avgDimension / bufferLength;
+   const adjustedCompressionRatio = applyAdjustments(compressionRatio);
    return adjustedCompressionRatio;
 }
 
- 
-async function compressImage(buffer, compressionRatio) {
+function applyAdjustments(compressionRatio) {
+   return Math.max(compressionRatio, 0.1);
+}
+
+async function compressImage(blob, compressionRatio) {
    try {
-      const compressedImage = await sharp(buffer)
+      // Your image compression logic using Sharp
+      const compressedBuffer = await sharp(blob)
          .jpeg({ quality: 50 })
          .toBuffer();
+
+      // Convert the compressed image buffer to Uint8Array
+      const compressedImage = new Uint8Array(compressedBuffer);
 
       return compressedImage;
    } catch (error) {
       console.error('Error compressing image:', error);
-      throw error; // Rethrow the error to handle it outside
+      throw error;
    }
 }
-// mew
+
 
 app.get('/all', async (req, res) => {
+   const imageResultRedis = [];
    const rdata = await redisCli.get('img');
    if (rdata != null) {
       console.log('Cache Hit: all');
-      res.send(rdata);
+      // Parse the JSON string from the cache
+      const cachedData = JSON.parse(rdata);
+
+// Convert each item's image data back to Uint8Array
+   const convertedData = cachedData.map(item => {
+      const imageData = item.image;
+
+      // Assuming imageData is a normal string
+      const uint8Array = new TextEncoder().encode(imageData);
+
+      return { image: uint8Array };
+   });
+
+
+      res.send(JSON.stringify(convertedData));
       redisCli.expire('img', TTL);
    }
+   
    else {
       console.log('Cache Miss: all');
       const [dbdata] = await conn.query('SELECT image FROM images;');
-      res.send(dbdata)
-      // mewwwwwwwwwww
-      const imageResultRedis = [];
+      const dbJson = JSON.stringify(dbdata);
+      res.send(dbJson);
 
-      // Ensure dbdata is not an empty array
-      if (Array.isArray(dbdata) && dbdata.length > 0) {
-         for (const item of dbdata) {
-            if (item && item.image) {
-               const uint8Array = new Uint8Array(item.image.data);
-               const buffer = Buffer.from(uint8Array);
-               console.log('Buffer length:', buffer.length);
+      for (const item of dbdata) {
+         const imageData = item.image;
+         const blob = Buffer.from(imageData);
 
-               // Check if the buffer is not empty before processing
-               if (buffer.length > 0) {
-                  // Apply compression decision algorithm
-                  const compressionRatio = calculateCompressionRatio(buffer);
-
-                  // Use compression algorithm (Sharp in this case)
-                  const compressedImage = await compressImage(buffer, compressionRatio);
-
-                  // Store compressed image in Redis
-                  imageResultRedis.push(compressedImage);
-               } else {
-                  console.log('Buffer is empty for an image');
-               }
-            } else {
-               console.log('Item or image is undefined or null');
-            }
+         if (blob.length > 0) {
+            const { width, height } = sizeOf(blob);
+            const compressionRatio = calculateCompressionRatio(width, height, blob.length);
+            const compressedImage = await compressImage(blob, compressionRatio);
+            imageResultRedis.push(compressedImage);
+            // console.log('Width:', width);
+            // console.log('Height:', height);
+            console.log('Uint8Array length:', blob.length);
+            // console.log('Image result for Redis:', imageResultRedis);
+            redisCli.setEx('img', TTL, JSON.stringify(imageResultRedis));
+            // console.log(imageResultRedis, "Stringified")
+         } else {
+            console.log('Buffer is empty for an image');
          }
-      } else {
-         console.log('No images found in the database');
+
+
+         
       }
-      // mewwwwwwwwwwww
-      // Store compressed images in Redis
-      redisCli.setEx('img', TTL, JSON.stringify(imageResultRedis));
    }
 });
 
@@ -123,13 +116,29 @@ app.get('/album/:album', async (req, res) => {
       console.log('Cache Hit: album', album);
       res.send(rdata);
       redisCli.expire(`img?album=${album}`, TTL);
-   }
-   else {
+   } else {
       console.log('Cache Miss: album', album);
       const [dbdata] = await conn.query('SELECT image FROM images WHERE album=?', [album]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
-      redisCli.setEx(`img?album=${album}`, TTL, dbJson)
+      redisCli.setEx(`img?album=${album}`, TTL, dbJson);
+   }
+});
+
+app.get('/all', async (req, res) => {
+   const rdata = await redisCli.get('img');
+   
+   if (rdata != null) {
+      console.log('Cache Hit: all');
+      res.send(rdata);
+      redisCli.expire('img', TTL);
+   }
+   else {
+      console.log('Cache Miss: all');
+      const [dbdata] = await conn.query('SELECT image FROM images;');
+      const dbJson = JSON.stringify(dbdata);
+      res.send(dbJson)
+      redisCli.setEx('img', TTL, dbJson);
    }
 });
 
@@ -137,18 +146,17 @@ app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
    const rdata = await redisCli.get(`imgId?id=${id}`);
    if (rdata != null) {
-      console.log('Cache Hit: album', album);
+      console.log('Cache Hit: id', id);
       res.send(rdata);
       redisCli.expire(`img?id=${id}`, TTL);
-   }
-   else {
-      console.log('Cache Miss');
+   } else {
+      console.log('Cache Miss: id', id);
       const [dbdata] = await conn.query('SELECT image FROM images WHERE id=?', [id]);
       const dbJson = JSON.stringify(dbdata);
       res.send(dbJson);
       redisCli.setEx(`img?id=${id}`, TTL, dbJson);
    }
-})
+});
 
 app.listen(port, () => {
    console.log('Server is running on port', port);
