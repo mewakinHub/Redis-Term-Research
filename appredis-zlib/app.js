@@ -112,7 +112,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       res.send(dbData);
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
-      const dbDeflated = zlib.deflateSync(dbJson).toString('base64');
+      const dbDeflated = zlib.deflateSync(dbJson, {level: 9}).toString('base64');
       redisCli.setEx(key, baseTTL, dbDeflated);
       console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
    }
