@@ -22,12 +22,22 @@
 
 in reality, we have to zip and unzip it, with many additional step such as convert to base64 or unzipping file, so overhead from this make literally every case slower.
 
-| Experiment |  |
+(without base64, we can’t zipping, so base64 is count as unzipping)
+
+- there are 0 cases that Zlib is going to be faster than vanilla Redis
+
+### Experimental
+
+| vanilla Redis | unzipping overhead |
 | --- | --- |
 |  |  |
 |  |  |
 |  |  |
 |  |  |
+
+// image of terminal result //
+
+- code as link in Github
 
 so, we’re not using zip right now!
 
@@ -103,15 +113,16 @@ B. Importance of efficient data storage and retrieval
 
 II. Pre-computing Process Theorem
 A. Metrics Collection
+
 1. Fetching compressed data from Redis
 2. Measuring query and decompression time for compressed and uncompressed data
 B. Decision Logic
-1. Comparing response time of querying and decompression with original response time
-2. Considering uncompressed data storage if decompression overhead is significant
+3. Comparing response time of querying and decompression with original response time
+4. Considering uncompressed data storage if decompression overhead is significant
 C. Global Variable for Cache Hit
-1. Introducing `zip_status` variable
-2. Changing value based on measurement comparison
-3. Using appropriate function based on `zip_status` for cache hit
+5. Introducing `zip_status` variable
+6. Changing value based on measurement comparison
+7. Using appropriate function based on `zip_status` for cache hit
 
 III. Reality Check
 A. Challenges of compression and decompression
