@@ -2,13 +2,14 @@
 
 - store both compressed and uncompressed data on Redis with separating key!
 - After compressing and storing data in Redis, initiate a pre-computing process to gather relevant metrics.
+**compressed in this topic is Zipping(Zlib) only, not count lossy**
 
 ### Pre-computing process theorem.
 
 1. **Metrics Collection:**
-    - Fetch the compressed data from Redis.
-    - compressed: Measure the time it takes to query and decompress the data from Redis.
-    - uncompressed: Measure the time it takes to query the data from Redis.
+    - Fetch the compressed and uncompressed data from Redis.
+    - compressed: Measure the time it takes to query and decompress the data from Redis. (count unzip overhead + fetch zip data)
+    - uncompressed: Measure the time it takes to query the data from Redis. (count fetch unzip data directly)
 2. **Decision Logic:**
     - Compare the response time of querying and decompressing the data with the original response time of fetching on both compression and uncompressed data from Redis.
     - If the decompression overhead is significantly higher than the original response time, consider storing uncompressed data in Redis for better retrieval performance
