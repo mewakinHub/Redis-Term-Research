@@ -16,7 +16,7 @@ const compressionRatio = (avgDimension * 100) / bufferLength;
 
 Math.max(compressionRatio, 0.4);
 
-const compressedBuffer = await sharp(blob)
+const compressedBuffer = sharp(blob)
          .jpeg({ quality: Math.floor(compressionRatio * 100) })
          .toBuffer();
 
