@@ -3,9 +3,10 @@ const mysql2 = require('mysql2');
 const mysql = require('mysql');
 const redis = require('redis');
 const MySQLEvents = require('@rodrigogs/mysql-events');
+const zlib = require('zlib');
 
 //Adjustable variables
-const port = 1001;
+const port = 1002;
 const baseTTL = 3600;
 const maxTTL = 21600;
 
@@ -96,10 +97,11 @@ async function AddTTL(key) {
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
-   const rJson = await redisCli.get(key);
+   const rDeflated = await redisCli.get(key);
    console.log('Key:', key);
-   if (rJson != null) {
+   if (rDeflated != null) {
       console.log('Cache: Hit');
+      const rJson = zlib.inflateSync(Buffer.from(rDeflated, 'base64'));
       res.send(rJson);
       RecordResponseTime();
       AddTTL(key);
@@ -110,7 +112,8 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       res.send(dbData);
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
-      redisCli.setEx(key, baseTTL, dbJson);
+      const dbDeflated = zlib.deflateSync(dbJson).toString('base64');
+      redisCli.setEx(key, baseTTL, dbDeflated);
       console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
    }
 };
@@ -118,17 +121,17 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
 //API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'img', 'SELECT image FROM images;', '');
+   FetchQuery(res, 'imgZ', 'SELECT image FROM images;', '');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'img-album', 'SELECT image FROM images WHERE album=?', album);
+   FetchQuery(res, 'imgZ-album', 'SELECT image FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'img-id', 'SELECT image FROM images WHERE id=?', id);
+   FetchQuery(res, 'imgZ-id', 'SELECT image FROM images WHERE id=?', id);
 });
 
 //Exit procedure
