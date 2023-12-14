@@ -113,7 +113,9 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
       redisCli.setEx(key, baseTTL, dbJson);
-      console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
+      console.log('•••••');
+      console.log('Set key', key, 'with TTL', String(baseTTL), 's');
+      console.log('•••••');
    }
 };
 

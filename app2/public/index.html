@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html style="zoom: 0.1">
+<head>
+   <title>app1</title>
+</head>
+<body>
+   <h1 style="font-size: 500px;">Our Redis system</h1>
+   <p id="loadTime" style="font-size: 300px;">Total load time: </p>
+   <div id="imageResult">
+      <script>
+         var startTime = new Date().getTime();
+         //Change data fetch here
+         fetch('/all')
+         //
+            .then(response => response.json())
+            .then(data => {
+               const imageResultDiv = document.getElementById('imageResult');
+               data.forEach(item => {
+                  const imageData = item.image; 
+                  const uint8Array = new Uint8Array(imageData.data);
+                  const blob = new Blob([uint8Array], { type: 'image/jpg' });
+                  const dataUrl = URL.createObjectURL(blob);
+                  const imgElement = document.createElement('img');
+                  imgElement.src = dataUrl;
+                  imgElement.alt = 'Image';
+                  imgElement.loading = 'lazy';
+                  imageResultDiv.appendChild(imgElement);
+               });
+               var endTime = new Date().getTime();
+               var loadTime = endTime - startTime;
+               const loadTimeP = document.getElementById('loadTime');
+               loadTimeP.append(loadTime);
+               loadTimeP.append(' ms');
+               fetch('/loadtime/'+loadTime);
+            })
+            .catch(error => {
+               console.error('Error fetching image data:', error);
+            });
+      </script>
+   </div>
+</body>
+</html>
