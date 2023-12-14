@@ -3,7 +3,6 @@ const mysql2 = require('mysql2');
 const mysql = require('mysql');
 const redis = require('redis');
 const MySQLEvents = require('@rodrigogs/mysql-events');
-const childprocess = require('child_process');
 
 //Adjustable variables
 const port = 1002;
