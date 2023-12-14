@@ -92,6 +92,39 @@ async function AddTTL(key) {
    console.log('• Changed TTL of key', key, 'from', String(currentTTL), 's to', String(newTTL), 's');
 }
 
+<<<<<<< Updated upstream
+=======
+//Compression function
+
+function calculateCompressionRatio(width, height, bufferLength) {
+   const avgDimension = (width + height) / 2;
+   const compressionRatio = (avgDimension * 100) / bufferLength;
+   const adjustedCompressionRatio = applyAdjustments(compressionRatio);
+   return adjustedCompressionRatio;
+}
+
+function applyAdjustments(compressionRatio) {
+   return Math.max(compressionRatio, 0.2);
+}
+
+async function compressImage(blob, compressionRatio) {
+   try {
+      // Your image compression logic using Sharp
+      const compressedBuffer = await sharp(blob)
+         .jpeg({ quality: Math.floor(compressionRatio * 100) })
+         .toBuffer();
+
+      // Convert the compressed image buffer to Uint8Array
+      const compressedImage = new Uint8Array(compressedBuffer);
+
+      return compressedImage;
+   } catch (error) {
+      console.error('Error compressing image:', error);
+      throw error;
+   }
+}
+
+>>>>>>> Stashed changes
 //Fetch function
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
