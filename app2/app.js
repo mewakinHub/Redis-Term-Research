@@ -6,7 +6,7 @@ const MySQLEvents = require('@rodrigogs/mysql-events');
 const childprocess = require('child_process');
 
 //Adjustable variables
-const port = 1001;
+const port = 1002;
 const baseTTL = 3600;
 const maxTTL = 21600;
 
@@ -113,9 +113,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
       redisCli.setEx(key, baseTTL, dbJson);
-      console.log('•••••');
-      console.log('Set key', key, 'with TTL', String(baseTTL), 's');
-      console.log('•••••');
+      console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
    }
 };
 
