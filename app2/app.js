@@ -157,6 +157,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       const [dbData] = await sqlConn.query(sqlquery, [params]);
       res.send(dbData);
       RecordResponseTime();
+      const imageResultRedis = [];
       for (const item of dbData) {
          const imageData = item.image;
          const blob = Buffer.from(imageData);
@@ -171,7 +172,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
             // console.log('Uint8Array length:', blob.length);
             console.log(compressionRatio);
             // console.log('Image result for Redis:', imageResultRedis);
-            redisCli.setEx(key, TTL, JSON.stringify(imageResultRedis));
+            redisCli.setEx(key, baseTTL, JSON.stringify(imageResultRedis));
             console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
             // console.log(imageResultRedis, "Stringified")
          } else {
