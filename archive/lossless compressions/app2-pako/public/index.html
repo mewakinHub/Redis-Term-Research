@@ -8,7 +8,7 @@
    <p id="loadTime" style="font-size: 300px;">Total load time: </p>
    <div id="imageResult">
       <script>
-         var startTime = new Date().getTime();
+         let startTime = new Date().getTime();
          //Change data fetch here
          fetch('/all')
          //
@@ -25,8 +25,8 @@
                   imgElement.alt = 'Image';
                   imageResultDiv.appendChild(imgElement);
                });
-               var endTime = new Date().getTime();
-               var loadTime = endTime - startTime;
+               let endTime = new Date().getTime();
+               let loadTime = endTime - startTime;
                const loadTimeP = document.getElementById('loadTime');
                loadTimeP.append(loadTime);
                loadTimeP.append(' ms');

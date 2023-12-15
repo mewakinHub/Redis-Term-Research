@@ -7,8 +7,8 @@ const zlib = require('zlib');
 
 //Adjustable variables
 const port = 1002;
-const baseTTL = 3600;
-const maxTTL = 21600;
+const TTLbase = 3600;
+const TTLmax = 21600;
 
 //Initialize Express
 const app = express();
@@ -28,10 +28,10 @@ const sqlConn = mysql2.createConnection({
 
 //Initialize Timestamps
 
-var startTime = 0;
-var endTime = 0;
-var responseTime = 0;
-var loadTime = 0;
+let startTime = 0;
+let endTime = 0;
+let responseTime = 0;
+let loadTime = 0;
 
 function RecordResponseTime() {
    endTime = new Date().getTime();
@@ -85,9 +85,9 @@ instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
 //TTL function
 async function AddTTL(key) {
    const currentTTL = await redisCli.ttl(key);
-   var newTTL = currentTTL + baseTTL;
-   if (newTTL > maxTTL) {
-      newTTL = maxTTL;
+   let newTTL = currentTTL + TTLbase;
+   if (newTTL > TTLmax) {
+      newTTL = TTLmax;
    }
    redisCli.expire(key, newTTL);
    console.log('• Changed TTL of key', key, 'from', String(currentTTL), 's to', String(newTTL), 's');
@@ -113,8 +113,8 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
       const dbDeflated = zlib.deflateSync(dbJson, {level: 9}).toString('base64');
-      redisCli.setEx(key, baseTTL, dbDeflated);
-      console.log('• Set key', key, 'with TTL', String(baseTTL), 's');
+      redisCli.setEx(key, TTLbase, dbDeflated);
+      console.log('• Set key', key, 'with TTL', String(TTLbase), 's');
    }
 };
 

@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html style="zoom: 0.1">
 <head>
-   <title>app1</title>
+   <title>appredis-sharp</title>
 </head>
 <body>
-   <h1 style="font-size: 500px;">Our Redis system</h1>
+   <h1 style="font-size: 500px;">Our system with Sharp</h1>
    <p id="loadTime" style="font-size: 300px;">Total load time: </p>
    <div id="imageResult">
       <script>
          let startTime = new Date().getTime();
          //Change data fetch here
-         fetch('/all')
+         fetch('/album/1')
          //
             .then(response => response.json())
             .then(data => {
@@ -23,6 +23,7 @@
                   const imgElement = document.createElement('img');
                   imgElement.src = dataUrl;
                   imgElement.alt = 'Image';
+                  imgElement.loading = 'lazy';
                   imageResultDiv.appendChild(imgElement);
                });
                let endTime = new Date().getTime();

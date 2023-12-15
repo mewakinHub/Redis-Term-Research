@@ -25,10 +25,10 @@ app.listen(port, () => {
 
 //Initialize Timestamps
 
-var startTime = 0;
-var endTime = 0;
-var responseTime = 0;
-var loadTime = 0;
+let startTime = 0;
+let endTime = 0;
+let responseTime = 0;
+let loadTime = 0;
 
 function RecordResponseTime() {
    endTime = new Date().getTime();

@@ -23,16 +23,16 @@ const sqlConn = mysql2.createConnection({
 
 //Initialize Timestamps
 
-var startTime = 0;
-var endTime = 0;
-var responseTime = 0;
-var loadTime = 0;
+let startTime = 0;
+let endTime = 0;
+let responseTime = 0;
+let loadTime = 0;
 
 app.get('/loadtime/:loadtime', async (req, res) => {
    loadTime = req.params.loadtime;
    if (responseTime != 0) {
-      console.log('Page render time:', String(loadTime-responseTime), 'ms');
-      console.log('Total load time:', loadTime, 'ms');
+      console.log('Page render time:', loadTime-responseTime, 'ms');
+      console.log('Total load time:', parseInt(loadTime), 'ms');
       console.log('---------------');
    }
 });

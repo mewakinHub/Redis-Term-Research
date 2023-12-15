@@ -6,7 +6,7 @@
    <h1 style="font-size: 500px;">Redis with Snappy on SQL</h1>
    <div id="imageResult">
       <script>
-         var startTime = new Date().getTime();
+         let startTime = new Date().getTime();
          fetch('/all')
             .then(response => response.json())
             .then(data => {
@@ -21,8 +21,8 @@
                   imgElement.alt = 'Image';
                   imageResultDiv.appendChild(imgElement);
                });
-               var endTime = new Date().getTime();
-               var loadTime = endTime - startTime;
+               let endTime = new Date().getTime();
+               let loadTime = endTime - startTime;
                console.log('Page load time:', loadTime, 'ms');
             })
             .catch(error => {

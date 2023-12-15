@@ -3,11 +3,22 @@ const mysql2 = require('mysql2');
 const mysql = require('mysql');
 const redis = require('redis');
 const MySQLEvents = require('@rodrigogs/mysql-events');
+const sharp = require('sharp');
 
 //Adjustable variables
-const port = 1001;
-const TTLbase = 3600;
-const TTLmax = 21600;
+const port = 1003; //Server port
+const TTLbase = 3600; //Base time-to-live of a Redis cache
+const TTLmax = 21600; //Maximum time-to-live of a Redis cache
+const enableCompression = true;
+let compressStiffness = 1; //Range (0,infinity). The higher the number, the less the image file size affects compression amount.
+let compressQualityMin = 25; //Range [0,100]. The floor of the quality of the compressed image in percent.
+let compressQualityMax = 75; //Range [0,100] only. The ceiling of the quality of the compressed image in percent.
+
+//Invalid variables prevention
+compressStiffness = Math.max(compressStiffness, 0.01);
+compressQualityMin = Math.min(Math.max(compressQualityMin, 0), 100);
+compressQualityMax = Math.min(Math.max(compressQualityMax, 0), 100);
+if(compressQualityMin > compressQualityMax) [compressQualityMin, compressQualityMax] = [compressQualityMax, compressQualityMin];
 
 //Initialize Express
 const app = express();
@@ -109,7 +120,36 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       const [dbData] = await sqlConn.query(sqlquery, [params]);
       res.send(dbData);
       RecordResponseTime();
-      const dbJson = JSON.stringify(dbData);
+      let dbJson;
+      if (enableCompression) {
+         let dbCompressed = [];
+         for (const item of dbData) {
+            let compressQualityNormalized;
+            const image = item.image;
+            sharp(image)
+               .metadata()
+               .then(meta => {
+                  const width = meta.width;
+                  const height = meta.height;
+                  const size = meta.size;
+                  const compressQualityRaw = (1 - (size / (width * height * compressStiffness))) * 100;
+                  compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
+                  /*console.log('width', width);
+                  console.log('height', height);
+                  console.log('size', size);
+                  console.log('raw', compressQualityRaw);
+                  console.log('normalized', compressQualityNormalized);*/
+               })
+            const compressedImage = await sharp(image)
+               .jpeg({ quality: compressQualityNormalized })
+               .toBuffer();
+            dbCompressed.push({image: compressedImage});
+         };
+         dbJson = JSON.stringify(dbCompressed);
+      }
+      else {
+         dbJson = JSON.stringify(dbData);
+      }
       redisCli.setEx(key, TTLbase, dbJson);
       console.log('• Set key', key, 'with TTL', String(TTLbase), 's');
    }
@@ -118,17 +158,17 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
 //API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'img', 'SELECT image FROM images;', '');
+   FetchQuery(res, 'imgS', 'SELECT image FROM images;', '');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'img-album', 'SELECT image FROM images WHERE album=?', album);
+   FetchQuery(res, 'imgS-album', 'SELECT image FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'img-id', 'SELECT image FROM images WHERE id=?', id);
+   FetchQuery(res, 'imgS-id', 'SELECT image FROM images WHERE id=?', id);
 });
 
 //Exit procedure
