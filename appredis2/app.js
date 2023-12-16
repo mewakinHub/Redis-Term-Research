@@ -10,11 +10,11 @@ const port = 1002; //Server port
 const TTLbase = 3600; //Base time-to-live in seconds of a Redis cache
 const TTLmax = 21600; //Maximum time-to-live in seconds of a Redis cache
 const enableCompression = true;
-let compressCorrection = 0.95; //Float (0, 1). The amount to correct Sharp's bigger output size when no compression is applied (quality = 80). The lesser, the more compression.
-let compressStiffness = 0.25; //Float (0,infinity). The higher the number, the less the image file size affects compression amount.
+const compressCorrection = 0.95; //Float (0, 1). The amount to correct Sharp's bigger output size when no compression is applied (quality = 80). The lesser, the more compression.
+const compressStiffness = 0.25; //Float (0,infinity). The higher the number, the less the image file size affects compression amount.
 let compressQualityMin = 1; //Integer [1,80]. The floor of image quality. Up to 100 is allowed, but more than 80 is expansion, not compression.
 let compressQualityMax = 60; //Integer [1,80]. The ceiling of image quality. Up to 100 is allowed, but more than 80 is expansion, not compression.
-let forceCompressQuality = 0; //Integer [1,80]. Set to negative or zero to disable. Used for testing. Up to 100 is allowed, but more than 80 is expansion, not compression.
+const forceCompressQuality = 0; //Integer [1,80]. Set to negative or zero to disable. Used for testing. Up to 100 is allowed, but more than 80 is expansion, not compression.
 
 //Invalid variables prevention
 compressStiffness = Math.max(compressStiffness, 0.01);
