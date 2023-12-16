@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql2 = require('mysql2');
-const mysql = require('mysql');
 const redis = require('redis');
+const mysql = require('mysql');
 const MySQLEvents = require('@rodrigogs/mysql-events');
 const sharp = require('sharp');
 
