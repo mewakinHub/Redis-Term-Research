@@ -6,9 +6,9 @@ const MySQLEvents = require('@rodrigogs/mysql-events');
 const sharp = require('sharp');
 
 //Adjustable variables
-const port = 1002; //Server port
-const TTLbase = 3600; //Base time-to-live in seconds of a Redis cache
-const TTLmax = 21600; //Maximum time-to-live in seconds of a Redis cache
+let port = 1002; //Integer [1000, infinity). Server port
+let TTLbase = 3600; //Integer [1, infinity). Base time-to-live in seconds of a Redis cache
+let TTLmax = 21600; //Integer [1, infinity). Maximum time-to-live in seconds of a Redis cache
 const enableCompression = true; //true or false. Whether to use compression or not.
 let compressCorrection = 0.95; //Float (0, 1). The amount to correct Sharp's bigger output size when no compression is applied (quality = 80). The lesser, the more compression.
 let compressStiffness = 0.25; //Float (0,infinity). The higher the number, the less the image file size affects compression amount.
@@ -16,7 +16,10 @@ let compressQualityMin = 1; //Integer [1,80]. The floor of image quality. Up to 
 let compressQualityMax = 60; //Integer [1,80]. The ceiling of image quality. Up to 100 is allowed, but more than 80 is expansion, not compression.
 const forceCompressQuality = 0; //Integer [1,80]. Set to negative or zero to disable. Used for testing. Up to 100 is allowed, but more than 80 is expansion, not compression.
 
-//Invalid variables prevention
+//Invalid system variables prevention
+port = Math.round(Math.max(port, 1000));
+TTLbase = Math.round(Math.max(TTLbase, 1));
+TTLmax = Math.round(Math.max(TTLbase, 1));
 compressCorrection = Math.min(Math.max(compressQualityMin, 0), 1);
 compressStiffness = Math.max(compressStiffness, 0.01);
 compressQualityMin = Math.round(Math.min(Math.max(compressQualityMin, 1), 100));
