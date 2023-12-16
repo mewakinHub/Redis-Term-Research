@@ -136,7 +136,6 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
             await sharp(image)
                .metadata()
                .then(meta => {
-                  format = meta.format;
                   width = meta.width;
                   height = meta.height;
                   size = meta.size;
@@ -149,7 +148,6 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
                   }
                   compressQualityCorrected = Math.round(compressQualityNormalized * compressCorrection)
                   logArray.push({
-                     format: format,
                      width: width,
                      height: height,
                      size: size,
@@ -173,7 +171,6 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       redisCli.setEx(key, TTLbase, dbJson);
       console.log('•••••••••');
       for (let i = 0; i < logArray.length; i++) {
-         //console.log('Img', i+1, 'format', logArray[i].format);
          //console.log('Img', i+1, 'width', logArray[i].width);
          //console.log('Img', i+1, 'height', logArray[i].height);
          //console.log('Img', i+1, 'size', logArray[i].size);
