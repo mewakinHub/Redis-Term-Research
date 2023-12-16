@@ -20,7 +20,8 @@ let forceCompressQuality = 0; //Integer [1,80]. Set to negative or zero to disab
 compressStiffness = Math.max(compressStiffness, 0.01);
 compressQualityMin = Math.round(Math.min(Math.max(compressQualityMin, 1), 100));
 compressQualityMax = Math.round(Math.min(Math.max(compressQualityMax, 1), 100));
-if(compressQualityMin > compressQualityMax) [compressQualityMin, compressQualityMax] = [compressQualityMax, compressQualityMin];
+if(compressQualityMin > compressQualityMax) 
+   [compressQualityMin, compressQualityMax] = [compressQualityMax, compressQualityMin];
 
 //Initialize Express
 const app = express();
