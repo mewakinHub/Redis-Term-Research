@@ -140,7 +140,11 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
                   size = meta.size;
                   if (forceCompressQuality <= 0) {
                      const compressQualityRaw = (1 - (size / (width * height * compressStiffness))) * 100;
-                     compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
+                     compressQualityNormalized =
+                        Math.min(
+                           Math.max(compressQualityRaw, compressQualityMin),
+                           compressQualityMax
+                        );
                   }
                   else {
                      compressQualityNormalized = forceCompressQuality;
