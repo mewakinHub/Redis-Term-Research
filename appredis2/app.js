@@ -127,7 +127,6 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       if (enableCompression) {
          let dbCompressed = [];
          for (const item of dbData) {
-            let format;
             let width;
             let height;
             let size;
