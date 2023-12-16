@@ -29,16 +29,29 @@
 2. Start an WSL terminal inside this project directory and type `redis-server` to start redis server.
 3. Start a generic terminal (Powershell/Command Prompt/Git bash) and get into app version of choice, for example: `cd app1`
 4. Make sure that app version has node_modules installed in the directory. If not, type `npm install`
-4. From the generic terminal, type `node app` to start the app in localhost with port number specified in the terminal.
+4. From the generic terminal, type `node app` to start the process in localhost with port number specified in the terminal.
 5. Open a browser and type in url "localhost:{portnumber}"
 
 ## Using the app
 - You can manually send commands to Redis by starting a new WSL terminal and type in `redis-cli`, then you can start sending commands. For example: to check all key-values, type in `keys *`
 - Change the data fetch type in file "public/index.js". There are 3 types: `fetch('/all')`, `fetch('/album/{album}')`, `fetch('/id/{id}')`. Just remember to save the file before reloading the page.
-- To edit the app.js, you can't just save the file when the app is running. To see the changes: save the file, press ctrl+c in the generic terminal to stop the process, then start it again with `node app`.
-- Do not shutdown computer while an app process terminal is running, as the key-values will not be saved. To exit properly, press Ctrl+C inside the running terminal. This will trigger the backend protocol, and will restore the snapshot when redis-server is started again.
+- To edit the app.js, you can't just save the file when the process is running. To see the changes: save the file, press ctrl+c in the generic terminal to stop the process, then start it again with `node app`.
+- Do not shutdown computer while the process terminal is running, as the key-values will not be saved. To exit properly, press Ctrl+C inside the running terminal. This will trigger the backend protocol, and will restore the snapshot when redis-server is started again.
 - To manually flush all the key-values, type `flushall` in redis-cli.
 
 ## App version folders
-- app0: Normal SQL
-- app1: Our Redis system on top of SQL
+- app0: Normal SQL.
+- appredis1: Our Redis system on top of SQL. With features including:
+   Features:
+   - Redis in-memory fetching, resulting in faster response time
+   - Redis TTL algorithm based on query frequency
+   - Redis snapshot backup dump on process exit
+   - Redis snapshot restoration on process start
+- appredis2: Our Redis system with Sharp image compression on top of SQL. With features including:
+   - Redis in-memory fetching, resulting in faster response time
+   - Redis TTL algorithm based on query frequency
+   - Redis snapshot backup dump on process exit
+   - Redis snapshot restoration on process start
+   - Redis obsolete cache prevention system by listening to changes in database
+   - Our own Sharp compression level calculation algorithm using image metadata with variables tweaked using our own testing
+   - Sharp image compression, resulting in faster response time and page render time
