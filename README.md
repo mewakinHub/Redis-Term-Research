@@ -42,7 +42,6 @@
 ## App version folders
 - app0: Normal SQL.
 - appredis1: Our Redis system on top of SQL. With features including:
-   Features:
    - Redis in-memory fetching, resulting in faster response time
    - Redis additive TTL algorithm based on query frequency
    - Redis snapshot backup dump on process exit
