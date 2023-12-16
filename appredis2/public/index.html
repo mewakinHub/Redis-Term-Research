@@ -18,7 +18,7 @@
                data.forEach(item => {
                   const imageData = item.image; 
                   const uint8Array = new Uint8Array(imageData.data);
-                  const blob = new Blob([uint8Array], { type: 'image/jpg' });
+                  const blob = new Blob([uint8Array], { type: 'image/webp' });
                   const dataUrl = URL.createObjectURL(blob);
                   const imgElement = document.createElement('img');
                   imgElement.src = dataUrl;
