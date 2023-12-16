@@ -1,8 +1,6 @@
 const express = require('express');
 const mysql2 = require('mysql2');
-const mysql = require('mysql');
 const redis = require('redis');
-const MySQLEvents = require('@rodrigogs/mysql-events');
 
 //Adjustable variables
 const port = 1001;
@@ -15,6 +13,7 @@ app.use(express.static('public'));
 app.listen(port, () => {
    console.log('---------------');
    console.log('• Server is running on port', port);
+   console.log('---------------');
 });
 
 //Initialize MySQL
@@ -52,35 +51,6 @@ const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 redisCli.connect();
 
-//Initialize MySQLEvent
-const sqlEventConn = mysql.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'root',
-});
-const instance = new MySQLEvents(sqlEventConn, {startAtEnd: true});
-instance.start()
-   .then(() => {
-      console.log('• Listening to change in DB')
-      console.log('---------------');
-   })
-   .catch(err => console.error('MySQLEvent failed to start.', err));
-
-//Obsolete Redis cache prevention procedure
-instance.addTrigger({
-   name: 'DetectChange',
-   expression: 'redisresearch.images.*',
-   statement: MySQLEvents.STATEMENTS.ALL,
-   onEvent: async (event) => {
-      console.log('• Change in DB detected');
-      redisCli.flushAll();
-      console.log('• Flushed all Redis keys');
-      console.log('---------------');
-   },
-});
-instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
-instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
-
 //TTL function
 async function AddTTL(key) {
    const currentTTL = await redisCli.ttl(key);
@@ -89,7 +59,7 @@ async function AddTTL(key) {
       newTTL = TTLmax;
    }
    redisCli.expire(key, newTTL);
-   console.log('• Changed TTL of key', key, 'from', String(currentTTL), 's to', String(newTTL), 's');
+   console.log('• Changed TTL of key', key, 'from', currentTTL, 's to', newTTL, 's');
 }
 
 //Fetch function
@@ -111,7 +81,10 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
       redisCli.setEx(key, TTLbase, dbJson);
-      console.log('• Set key', key, 'with TTL', String(TTLbase), 's');
+      console.log('•••••••••');
+      console.log('Set key', key, 'with TTL', TTLbase, 's');
+      console.log('Approximate size in Redis', Math.round(dbJson.length / 1.81));
+      console.log('•••••••••');
    }
 };
 
@@ -138,7 +111,6 @@ process.on('SIGINT', async () => {
    console.log('• Saved snapshot to dump.rdb');
    console.log('---------------');
    sqlConn.end();
-   sqlEventConn.end();
    redisCli.quit();
    process.exit();
 });

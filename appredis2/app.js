@@ -6,18 +6,20 @@ const MySQLEvents = require('@rodrigogs/mysql-events');
 const sharp = require('sharp');
 
 //Adjustable variables
-const port = 1003; //Server port
-const TTLbase = 3600; //Base time-to-live of a Redis cache
-const TTLmax = 21600; //Maximum time-to-live of a Redis cache
+const port = 1002; //Server port
+const TTLbase = 3600; //Base time-to-live in seconds of a Redis cache
+const TTLmax = 21600; //Maximum time-to-live in seconds of a Redis cache
 const enableCompression = true;
-let compressStiffness = 1; //Range (0,infinity). The higher the number, the less the image file size affects compression amount.
-let compressQualityMin = 25; //Range [0,100]. The floor of the quality of the compressed image in percent.
-let compressQualityMax = 75; //Range [0,100] only. The ceiling of the quality of the compressed image in percent.
+let compressCorrection = 0.95; //Float (0, 1). The amount to correct Sharp's bigger output size when no compression is applied (quality = 80). The lesser, the more compression.
+let compressStiffness = 0.25; //Float (0,infinity). The higher the number, the less the image file size affects compression amount.
+let compressQualityMin = 1; //Integer [1,80]. The floor of image quality. More than 80 is allowed, but that is expansion, not compression.
+let compressQualityMax = 60; //Integer [1,80]. The floor of image quality. More than 80 is allowed, but that is expansion, not compression.
+let forceCompressQuality = 0; //Integer [1,80]. Set to negative or zero to disable. Used for testing. More than 80 is allowed, but that is expansion, not compression.
 
 //Invalid variables prevention
 compressStiffness = Math.max(compressStiffness, 0.01);
-compressQualityMin = Math.min(Math.max(compressQualityMin, 0), 100);
-compressQualityMax = Math.min(Math.max(compressQualityMax, 0), 100);
+compressQualityMin = Math.round(Math.min(Math.max(compressQualityMin, 1), 100));
+compressQualityMax = Math.round(Math.min(Math.max(compressQualityMax, 1), 100));
 if(compressQualityMin > compressQualityMax) [compressQualityMin, compressQualityMax] = [compressQualityMax, compressQualityMin];
 
 //Initialize Express
@@ -100,7 +102,7 @@ async function AddTTL(key) {
       newTTL = TTLmax;
    }
    redisCli.expire(key, newTTL);
-   console.log('• Changed TTL of key', key, 'from', String(currentTTL), 's to', String(newTTL), 's');
+   console.log('• Changed TTL of key', key, 'from', currentTTL, 's to', newTTL, 's');
 }
 
 //Fetch function
@@ -121,27 +123,45 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       res.send(dbData);
       RecordResponseTime();
       let dbJson;
+      let logArray = [];
       if (enableCompression) {
          let dbCompressed = [];
          for (const item of dbData) {
-            let compressQualityNormalized;
+            let format;
+            let width;
+            let height;
+            let size;
+            let compressQualityCorrected;
             const image = item.image;
-            sharp(image)
+            await sharp(image)
                .metadata()
                .then(meta => {
-                  const width = meta.width;
-                  const height = meta.height;
-                  const size = meta.size;
-                  const compressQualityRaw = (1 - (size / (width * height * compressStiffness))) * 100;
-                  compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
-                  /*console.log('width', width);
-                  console.log('height', height);
-                  console.log('size', size);
-                  console.log('raw', compressQualityRaw);
-                  console.log('normalized', compressQualityNormalized);*/
-               })
+                  format = meta.format;
+                  width = meta.width;
+                  height = meta.height;
+                  size = meta.size;
+                  if (forceCompressQuality <= 0) {
+                     const compressQualityRaw = (1 - (size / (width * height * compressStiffness))) * 100;
+                     compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
+                  }
+                  else {
+                     compressQualityNormalized = forceCompressQuality;
+                  }
+                  compressQualityCorrected = Math.round(compressQualityNormalized * compressCorrection)
+                  logArray.push({
+                     format: format,
+                     width: width,
+                     height: height,
+                     size: size,
+                     quality: compressQualityCorrected
+                  });
+               });
             const compressedImage = await sharp(image)
-               .jpeg({ quality: compressQualityNormalized })
+               .webp({
+                  quality: compressQualityCorrected,
+                  minSize: true,
+                  effort: 0
+               })
                .toBuffer();
             dbCompressed.push({image: compressedImage});
          };
@@ -151,7 +171,17 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
          dbJson = JSON.stringify(dbData);
       }
       redisCli.setEx(key, TTLbase, dbJson);
-      console.log('• Set key', key, 'with TTL', String(TTLbase), 's');
+      console.log('•••••••••');
+      for (let i = 0; i < logArray.length; i++) {
+         //console.log('Img', i+1, 'format', logArray[i].format);
+         //console.log('Img', i+1, 'width', logArray[i].width);
+         //console.log('Img', i+1, 'height', logArray[i].height);
+         //console.log('Img', i+1, 'size', logArray[i].size);
+         console.log('Img', i+1, 'quality:', logArray[i].quality);
+      }
+      console.log('Set key', key, 'with TTL', TTLbase, 's');
+      console.log('Approximate size in Redis', Math.round(dbJson.length / 1.81));
+      console.log('•••••••••');
    }
 };
 

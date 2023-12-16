@@ -6,7 +6,7 @@ const MySQLEvents = require('@rodrigogs/mysql-events');
 const zlib = require('zlib');
 
 //Adjustable variables
-const port = 1002;
+const port = 1001;
 const TTLbase = 3600;
 const TTLmax = 21600;
 

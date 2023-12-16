@@ -34,7 +34,8 @@
 
 ## Using the app
 - You can manually send commands to Redis by starting a new WSL terminal and type in `redis-cli`, then you can start sending commands. For example: to check all key-values, type in `keys *`
-- Change the data fetch type in file "public/index.js". There are 3 types: `fetch('/all')`, `fetch('/album/{album}')`, `fetch('/id/{id}')`
+- Change the data fetch type in file "public/index.js". There are 3 types: `fetch('/all')`, `fetch('/album/{album}')`, `fetch('/id/{id}')`. Just remember to save the file before reloading the page.
+- To edit the app.js, you can't just save the file when the app is running. To see the changes: save the file, press ctrl+c in the generic terminal to stop the process, then start it again with `node app`.
 - Do not shutdown computer while an app process terminal is running, as the key-values will not be saved. To exit properly, press Ctrl+C inside the running terminal. This will trigger the backend protocol, and will restore the snapshot when redis-server is started again.
 - To manually flush all the key-values, type `flushall` in redis-cli.
 
