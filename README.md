@@ -46,7 +46,7 @@
    - Redis additive TTL algorithm based on query frequency
    - Redis snapshot backup dump on process exit
    - Redis snapshot restoration on process start
-- appredis2: Our Redis system with Sharp image compression on top of SQL. With features including:
+- appredis2: Our 2.0 Redis system with Sharp image compression on top of SQL. With features including:
    - Redis in-memory fetching, resulting in faster response time
    - Redis additive TTL algorithm based on query frequency
    - Redis snapshot backup dump on process exit
