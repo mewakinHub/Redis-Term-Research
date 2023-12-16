@@ -2,7 +2,7 @@ const express = require('express');
 const mysql2 = require('mysql2');
 
 //Adjustable variables
-const port = 1000; //Server port
+const port = 1000; //Integer [1000, infinity). Server port
 
 //Initialize Express
 const app = express();

@@ -54,4 +54,4 @@
    - Redis obsolete cache prevention system by listening to changes in database
    - Invalid system variables prevention
    - Our own Sharp compression level calculation algorithm using image metadata with variables tweaked using our own testing
-   - Sharp image compression, resulting in faster response time and page render time
+   - Sharp image compression, leading to smaller file sizes, resulting in faster response time and page render time
