@@ -44,12 +44,12 @@
 - appredis1: Our Redis system on top of SQL. With features including:
    Features:
    - Redis in-memory fetching, resulting in faster response time
-   - Redis TTL algorithm based on query frequency
+   - Redis additive TTL algorithm based on query frequency
    - Redis snapshot backup dump on process exit
    - Redis snapshot restoration on process start
 - appredis2: Our Redis system with Sharp image compression on top of SQL. With features including:
    - Redis in-memory fetching, resulting in faster response time
-   - Redis TTL algorithm based on query frequency
+   - Redis additive TTL algorithm based on query frequency
    - Redis snapshot backup dump on process exit
    - Redis snapshot restoration on process start
    - Redis obsolete cache prevention system by listening to changes in database
