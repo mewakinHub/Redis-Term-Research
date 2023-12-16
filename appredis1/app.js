@@ -3,9 +3,9 @@ const mysql2 = require('mysql2');
 const redis = require('redis');
 
 //Adjustable variables
-const port = 1001;
-const TTLbase = 3600;
-const TTLmax = 21600;
+const port = 1001; //Server port
+const TTLbase = 3600; //Base time-to-live in seconds of a Redis cache
+const TTLmax = 21600; //Maximum time-to-live in seconds of a Redis cache
 
 //Initialize Express
 const app = express();
