@@ -5,7 +5,7 @@ const mysql = require('mysql');
 const MySQLEvents = require('@rodrigogs/mysql-events');
 const sharp = require('sharp');
 
-let compressCorrection = 0.95; //Float range [0, 1]. Not recommended to change. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80).
+let compressCorrection = 0.95; //Float range (0, 1]. Not recommended to change. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80).
 //Adjustable variables
 let port = 1002; //Integer range [1000, infinity). Server port
 let TTLbase = 3600; //Integer range [1, infinity). Base time-to-live in seconds of a Redis cache
