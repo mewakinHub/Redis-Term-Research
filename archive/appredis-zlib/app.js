@@ -1,12 +1,10 @@
 const express = require('express');
 const mysql2 = require('mysql2');
-const mysql = require('mysql');
 const redis = require('redis');
-const MySQLEvents = require('@rodrigogs/mysql-events');
 const zlib = require('zlib');
 
 //Adjustable variables
-const port = 1001;
+const port = 1003;
 const TTLbase = 3600;
 const TTLmax = 21600;
 
@@ -52,35 +50,6 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 redisCli.connect();
-
-//Initialize MySQLEvent
-const sqlEventConn = mysql.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'root',
-});
-const instance = new MySQLEvents(sqlEventConn, {startAtEnd: true});
-instance.start()
-   .then(() => {
-      console.log('• Listening to change in DB')
-      console.log('---------------');
-   })
-   .catch(err => console.error('MySQLEvent failed to start.', err));
-
-//Obsolete Redis cache prevention procedure
-instance.addTrigger({
-   name: 'DetectChange',
-   expression: 'redisresearch.images.*',
-   statement: MySQLEvents.STATEMENTS.ALL,
-   onEvent: async (event) => {
-      console.log('• Change in DB detected');
-      redisCli.flushAll();
-      console.log('• Flushed all Redis keys');
-      console.log('---------------');
-   },
-});
-instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
-instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
 
 //TTL function
 async function AddTTL(key) {
