@@ -23,7 +23,7 @@ const sqlConn = mysql2.createConnection({
 
 //Adjustable database-specific cache miss query function
 async function QueryDatabase(sqlquery, params) {
-   return await sqlConn.query(sqlquery, [params]);
+   return sqlConn.query(sqlquery, [params]);
 }
 
 
@@ -89,7 +89,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    }
    else {
       console.log('Cache: Miss');
-      const [dbData] = QueryDatabase(sqlquery, params);
+      const [dbData] = await QueryDatabase(sqlquery, params);
       res.send(dbData);
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);

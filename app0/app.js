@@ -19,9 +19,9 @@ const sqlConn = mysql2.createConnection({
 }).promise();
 
 //Adjustable database-specific cache miss query function
-async function QueryDatabase(sqlquery, params) {
-   return await sqlConn.query(sqlquery, [params]);
-}
+function QueryDatabase(sqlquery, params) {
+   return sqlConn.query(sqlquery, [params]);
+};
 
 
 
@@ -59,7 +59,7 @@ function RecordResponseTime() {
 //Fetch function
 async function FetchQuery(res, sqlquery, params) {
    startTime = new Date().getTime();
-   const [dbData] = QueryDatabase(sqlquery, params);
+   const [dbData] = await QueryDatabase(sqlquery, params);
    res.send(dbData);
    RecordResponseTime();
 };
