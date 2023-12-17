@@ -5,16 +5,16 @@ const mysql = require('mysql');
 const MySQLEvents = require('@rodrigogs/mysql-events');
 const sharp = require('sharp');
 
+let compressCorrection = 0.95; //Float range [0, 1]. Not recommended to change. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80).
 //Adjustable variables
-let port = 1002; //Integer [1000, infinity). Server port
-let TTLbase = 3600; //Integer [1, infinity). Base time-to-live in seconds of a Redis cache
-let TTLmax = 21600; //Integer [1, infinity). Maximum time-to-live in seconds of a Redis cache
+let port = 1002; //Integer range [1000, infinity). Server port
+let TTLbase = 3600; //Integer range [1, infinity). Base time-to-live in seconds of a Redis cache
+let TTLmax = 21600; //Integer range [1, infinity). Maximum time-to-live in seconds of a Redis cache
 const enableCompression = true; //true or false. Whether to use compression or not.
-let compressCorrection = 0.95; //Float [0, 1]. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80). The lesser, the more compression.
-let compressStiffness = 0.25; //Float (0,infinity). The higher the number, the less the image file size affects compression amount, thus less compression.
-let compressQualityMin = 0.1; //Float (0, 1]. The floor of compressed image quality.
-let compressQualityMax = 0.8; //Float (0, 1]. The ceiling of compressed image quality.
-const forceCompressQuality = 0; //Float (0, 1]. Set to negative or zero to disable. Used for testing.
+let compressStiffness = 0.25; //Float range (0,infinity). The higher the number, the less the image file size affects compression amount, thus less compression.
+let compressQualityMin = 0.1; //Float range (0, 1]. The floor of compressed image quality.
+let compressQualityMax = 0.8; //Float range (0, 1]. The ceiling of compressed image quality.
+const forceCompressQuality = 0; //Float range (0, 1]. Set to negative or zero to disable. Used for testing.
 
 //Adjustable database-specific variables
 const sqlHost = 'localhost';
