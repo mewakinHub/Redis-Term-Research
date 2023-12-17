@@ -7,6 +7,27 @@ const port = 1001; //Integer [1000, infinity). Server port
 const TTLbase = 3600; //Integer [1, infinity). Base time-to-live in seconds of a Redis cache
 const TTLmax = 21600; //Integer [1, infinity). Maximum time-to-live in seconds of a Redis cache
 
+//Adjustable database-specific variables
+const sqlHost = 'localhost';
+const sqlUser = 'root';
+const sqlPassword = 'root';
+const sqlDatabase = 'redisresearch';
+
+//Adjustable database-specific initialization
+const sqlConn = mysql2.createConnection({
+   host: sqlHost,
+   user: sqlUser,
+   password: sqlPassword,
+   database: sqlDatabase
+}).promise();
+
+//Adjustable database-specific cache miss query function
+async function QueryDatabase(sqlquery, params) {
+   return await sqlConn.query(sqlquery, [params]);
+}
+
+
+
 //Initialize Express
 const app = express();
 app.use(express.static('public'));
@@ -16,15 +37,12 @@ app.listen(port, () => {
    console.log('---------------');
 });
 
-//Initialize MySQL
-const sqlConn = mysql2.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'root',
-   database: 'redisresearch'
-}).promise();
+//Initialize Redis
+const redisCli = redis.createClient();
+redisCli.on('error', err => console.log('Redis Client Error', err));
+redisCli.connect();
 
-//Initialize Timestamps
+//Initialize time measurements
 
 let startTime = 0;
 let endTime = 0;
@@ -45,11 +63,6 @@ app.get('/loadtime/:loadtime', async (req, res) => {
       console.log('---------------');
    }
 });
-
-//Initialize Redis
-const redisCli = redis.createClient();
-redisCli.on('error', err => console.log('Redis Client Error', err));
-redisCli.connect();
 
 //TTL function
 async function AddTTL(key) {
@@ -76,7 +89,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    }
    else {
       console.log('Cache: Miss');
-      const [dbData] = await sqlConn.query(sqlquery, [params]);
+      const [dbData] = QueryDatabase(sqlquery, params);
       res.send(dbData);
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
@@ -88,7 +101,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    }
 };
 
-//API endpoints
+//Express API endpoints
 
 app.get('/all', async (req, res) => {
    FetchQuery(res, 'img', 'SELECT image FROM images;', '');

@@ -4,6 +4,27 @@ const mysql2 = require('mysql2');
 //Adjustable variables
 const port = 1000; //Integer [1000, infinity). Server port
 
+//Adjustable database-specific variables
+const sqlHost = 'localhost';
+const sqlUser = 'root';
+const sqlPassword = 'root';
+const sqlDatabase = 'redisresearch';
+
+//Adjustable database-specific initialization
+const sqlConn = mysql2.createConnection({
+   host: sqlHost,
+   user: sqlUser,
+   password: sqlPassword,
+   database: sqlDatabase
+}).promise();
+
+//Adjustable database-specific cache miss query function
+async function QueryDatabase(sqlquery, params) {
+   return await sqlConn.query(sqlquery, [params]);
+}
+
+
+
 //Initialize Express
 const app = express();
 app.use(express.static('public'));
@@ -13,15 +34,7 @@ app.listen(port, () => {
    console.log('---------------');
 });
 
-//Initialize MySQL
-const sqlConn = mysql2.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'root',
-   database: 'redisresearch'
-}).promise();
-
-//Initialize Timestamps
+//Initialize time measurements
 
 let startTime = 0;
 let endTime = 0;
@@ -46,12 +59,12 @@ function RecordResponseTime() {
 //Fetch function
 async function FetchQuery(res, sqlquery, params) {
    startTime = new Date().getTime();
-   const [dbData] = await sqlConn.query(sqlquery, [params]);
+   const [dbData] = QueryDatabase(sqlquery, params);
    res.send(dbData);
    RecordResponseTime();
 };
 
-//API endpoints
+//Express API endpoints
 
 app.get('/all', async (req, res) => {
    FetchQuery(res, 'SELECT image FROM images;', '');

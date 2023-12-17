@@ -11,10 +11,46 @@ let TTLbase = 3600; //Integer [1, infinity). Base time-to-live in seconds of a R
 let TTLmax = 21600; //Integer [1, infinity). Maximum time-to-live in seconds of a Redis cache
 const enableCompression = true; //true or false. Whether to use compression or not.
 let compressCorrection = 0.95; //Float (0, 1). The amount to correct Sharp's bigger output size when no compression is applied (quality = 80). The lesser, the more compression.
-let compressStiffness = 0.3; //Float (0,infinity). The higher the number, the less the image file size affects compression amount.
-let compressQualityMin = 0.01; //Float (0, 1]. The floor of compressed image quality.
+let compressStiffness = 0.25; //Float (0,infinity). The higher the number, the less the image file size affects compression amount, thus less compression.
+let compressQualityMin = 0.1; //Float (0, 1]. The floor of compressed image quality.
 let compressQualityMax = 0.8; //Float (0, 1]. The ceiling of compressed image quality.
 const forceCompressQuality = 0; //Float (0, 1]. Set to negative or zero to disable. Used for testing.
+
+//Adjustable database-specific variables
+const sqlHost = 'localhost';
+const sqlUser = 'root';
+const sqlPassword = 'root';
+const sqlDatabase = 'redisresearch';
+
+//Adjustable database-specific initialization
+
+const sqlConn = mysql2.createConnection({
+   host: sqlHost,
+   user: sqlUser,
+   password: sqlPassword,
+   database: sqlDatabase
+}).promise();
+
+const sqlEventConn = mysql.createConnection({
+   host: sqlHost,
+   user: sqlUser,
+   password: sqlPassword
+});
+
+const instance = new MySQLEvents(sqlEventConn, {startAtEnd: true});
+instance.start()
+   .then(() => {
+      console.log('• Listening to change in DB')
+      console.log('---------------');
+   })
+   .catch(err => console.error('MySQLEvent failed to start.', err));
+
+//Adjustable database-specific cache miss query function
+async function QueryDatabase(sqlquery, params) {
+   return await sqlConn.query(sqlquery, [params]);
+}
+
+
 
 //Invalid system variables prevention
 port = Math.round(Math.max(port, 1000));
@@ -35,15 +71,7 @@ app.listen(port, () => {
    console.log('• Server is running on port', port);
 });
 
-//Initialize MySQL
-const sqlConn = mysql2.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'root',
-   database: 'redisresearch'
-}).promise();
-
-//Initialize Timestamps
+//Initialize time measurements
 
 let startTime = 0;
 let endTime = 0;
@@ -69,20 +97,6 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 redisCli.connect();
-
-//Initialize MySQLEvent
-const sqlEventConn = mysql.createConnection({
-   host: 'localhost',
-   user: 'root',
-   password: 'root',
-});
-const instance = new MySQLEvents(sqlEventConn, {startAtEnd: true});
-instance.start()
-   .then(() => {
-      console.log('• Listening to change in DB')
-      console.log('---------------');
-   })
-   .catch(err => console.error('MySQLEvent failed to start.', err));
 
 //Obsolete Redis cache prevention procedure
 instance.addTrigger({
@@ -124,7 +138,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    }
    else {
       console.log('Cache: Miss');
-      const [dbData] = await sqlConn.query(sqlquery, [params]);
+      const [dbData] = QueryDatabase(sqlquery, params);
       res.send(dbData);
       RecordResponseTime();
       let dbJson;
@@ -190,7 +204,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    }
 };
 
-//API endpoints
+//Express API endpoints
 
 app.get('/all', async (req, res) => {
    FetchQuery(res, 'imgS', 'SELECT image FROM images;', '');
