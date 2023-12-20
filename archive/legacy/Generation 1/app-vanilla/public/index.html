@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html style="zoom: 0.1">
+<head>
+   <script>
+      function onLoad() { 
+         var now = new Date().getTime();
+         var page_load_time = now - performance.timing.navigationStart;
+         console.log("User-perceived page loading time: " + page_load_time);
+      }
+   </script>
+</head>
+<body>
+   <div id="imageResult">
+      <script>
+         var startTime = new Date().getTime();
+         fetch('/imgall')
+            .then(response => response.json())
+            .then(data => {
+               const imageResultDiv = document.getElementById('imageResult');
+               data.forEach(item => {
+                  const imageData = item.image; 
+                  const uint8Array = new Uint8Array(imageData.data);
+                  const blob = new Blob([uint8Array], { type: 'image/jpg' });
+                  const dataUrl = URL.createObjectURL(blob);
+                  const imgElement = document.createElement('img');
+                  imgElement.src = dataUrl;
+                  imgElement.alt = 'Image';
+                  imageResultDiv.appendChild(imgElement);
+               });
+               var endTime = new Date().getTime();
+               var loadTime = endTime - startTime;
+               console.log('Page load time:', loadTime, 'ms');
+            })
+            .catch(error => {
+               console.error('Error fetching image data:', error);
+            });
+      </script>
+   </div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html style="zoom: 0.1">
+<head>
+   <script>
+      function onLoad() { 
+         var now = new Date().getTime();
+         var page_load_time = now - performance.timing.navigationStart;
+         console.log("Render time:", page_load_time, "ms");
+      }
+   </script>
+</head>
+<body onload="onLoad()">
+   <h1>Vanilla SQL</h1>>
+   <% images.forEach(image => { %>
+      <img src="data:image/jpeg;base64,
+                <%= image.image.toString('base64') %>">
+   <% }); %>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html style="zoom: 0.1">
+<head>
+</head>
+<body>
+   <div id="imageResult">
+      <script>
+         var startTime = new Date().getTime();
+         fetch('/imgalbum/2')
+            .then(response => response.json())
+            .then(data => {
+               const imageResultDiv = document.getElementById('imageResult');
+               data.forEach(item => {
+                  const imageData = item.image; 
+                  const uint8Array = new Uint8Array(imageData.data);
+                  consteateObjectURL(blob); blob = new Blob([uint8Array], { type: 'image/jpg' });
+                  const dataUrl = URL.cr
+                  const imgElement = document.createElement('img');
+                  imgElement.src = dataUrl;
+                  imgElement.alt = 'Image';
+                  imageResultDiv.appendChild(imgElement);
+               });
+               var endTime = new Date().getTime();
+               var loadTime = endTime - startTime;
+               console.log('Page load time:', loadTime, 'ms');
+            })
+            .catch(error => {
+               console.error('Error fetching image data:', error);
+            });
+      </script>
+   </div>
+</body>
+</html>
