@@ -5,24 +5,72 @@ const mysql = require('mysql');
 const MySQLEvents = require('@rodrigogs/mysql-events');
 const sharp = require('sharp');
 
-let compressCorrection = 0.95; //Float range (0, 1]. Not recommended to change. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80).
 //Adjustable variables
+
 let port = 1003; //Integer range [1000, infinity). Server port
+
+const enableTTL = true; //true for false. Whether to use TTL or not. (true = cache expires, false = cache never expires)
 let TTLbase = 3600; //Integer range [1, infinity). Base time-to-live in seconds of a Redis cache
 let TTLmax = 21600; //Integer range [1, infinity). Maximum time-to-live in seconds of a Redis cache
+
 const enableCompression = true; //true or false. Whether to use compression or not.
 let compressStiffness = 0.25; //Float range (0,infinity). The higher the number, the less the image file size affects compression amount, thus less compression.
 let compressQualityMin = 0.1; //Float range (0, 1]. The floor of compressed image quality.
 let compressQualityMax = 0.8; //Float range (0, 1]. The ceiling of compressed image quality.
+let compressCorrection = 0.95; //Float range (0, 1]. Not recommended to change. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80).
 const forceCompressQuality = 0; //Float range (0, 1]. Set to negative or zero to disable. Used for testing.
 
-//Adjustable database-specific variables
-const sqlHost = 'localhost';
-const sqlUser = 'root';
-const sqlPassword = 'root';
-const sqlDatabase = 'redisresearch';
+const sqlHost = 'localhost'; //String. Address of the webpage.
+const sqlUser = 'root'; //String. MySQL user.
+const sqlPassword = 'root'; //String. MySQL password.
+const sqlDatabase = 'redisresearch'; //String. MySQL password.
+const sqlPKCol = 'id'; //String. Name of the column in the table which is the primary key.
+const sqlImgCol = 'image'; //String. Name of the column in the table which stores the BLOB images.
 
-//Adjustable database-specific initialization
+const imgKey = 'imgS'; //String. Name of the image data key family to be stored into Redis
+const metaKey = 'meta'; //String. Name of the metadata key family to be stored into Redis
+
+//Initialize Express
+
+const app = express();
+app.use(express.static('public'));
+app.listen(port, () => {
+   console.log('---------------');
+   console.log('• Server is running on port', port);
+});
+
+//Adjustable database-specific Express API endpoints
+
+app.get('/all', async (req, res) => {
+   FetchQuery(res, keyName, 'SELECT '+sqlImgCol+' FROM images', '');
+});
+
+app.get('/album/:album', async (req, res) => {
+   const album = req.params.album;
+   FetchQuery(res, keyName+'-album', 'SELECT '+sqlImgCol+' FROM images WHERE album=?', album);
+});
+
+app.get('/id/:id', async (req, res) => {
+   const id = req.params.id;
+   FetchQuery(res, keyName+'-id', 'SELECT '+sqlImgCol+' FROM images WHERE id=?', id);
+});
+
+
+
+//Invalid system variables prevention
+
+port = Math.round(Math.max(port, 1000));
+TTLbase = Math.round(Math.max(TTLbase, 1));
+TTLmax = Math.round(Math.max(TTLbase, 1));
+compressCorrection = Math.min(Math.max(compressCorrection, 0), 1);
+compressStiffness = Math.max(compressStiffness, 0.01);
+compressQualityMin = Math.min(Math.max(compressQualityMin, 0.01), 1);
+compressQualityMax = Math.min(Math.max(compressQualityMax, 0.01), 1);
+if (compressQualityMin > compressQualityMax) {
+   [compressQualityMin, compressQualityMax] = [compressQualityMax, compressQualityMin];
+}
+
+//Initialization
 
 const sqlConn = mysql2.createConnection({
    host: sqlHost,
@@ -44,43 +92,6 @@ instance.start()
       console.log('---------------');
    })
    .catch(err => console.error('MySQLEvent failed to start.', err));
-
-//Initialize Express
-const app = express();
-app.use(express.static('public'));
-app.listen(port, () => {
-   console.log('---------------');
-   console.log('• Server is running on port', port);
-});
-
-//Adjustable database-specific Express API endpoints
-
-app.get('/all', async (req, res) => {
-   FetchQuery(res, 'imgS', 'SELECT image FROM images;', '');
-});
-
-app.get('/album/:album', async (req, res) => {
-   const album = req.params.album;
-   FetchQuery(res, 'imgS-album', 'SELECT image FROM images WHERE album=?', album);
-});
-
-app.get('/id/:id', async (req, res) => {
-   const id = req.params.id;
-   FetchQuery(res, 'imgS-id', 'SELECT image FROM images WHERE id=?', id);
-});
-
-
-
-//Invalid system variables prevention
-port = Math.round(Math.max(port, 1000));
-TTLbase = Math.round(Math.max(TTLbase, 1));
-TTLmax = Math.round(Math.max(TTLbase, 1));
-compressCorrection = Math.min(Math.max(compressCorrection, 0), 1);
-compressStiffness = Math.max(compressStiffness, 0.01);
-compressQualityMin = Math.min(Math.max(compressQualityMin, 0.01), 1);
-compressQualityMax = Math.min(Math.max(compressQualityMax, 0.01), 1);
-if(compressQualityMin > compressQualityMax) 
-   [compressQualityMin, compressQualityMax] = [compressQualityMax, compressQualityMin];
 
 //Initialize time measurements
 
@@ -105,42 +116,35 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 });
 
 //Initialize Redis
+
 const redisCli = redis.createClient();
 redisCli.on('error', err => console.log('Redis Client Error', err));
 redisCli.connect();
 
-//Outdated Redis cache deletion procedure
+//Outdated cache deletion procedure
+
 instance.addTrigger({
    name: 'DetectChange',
    expression: 'redisresearch.images.*',
    statement: MySQLEvents.STATEMENTS.ALL,
    onEvent: async (event) => {
-      console.log('• Change in DB detected');
-      redisCli.flushAll();
-      console.log('• Flushed all Redis keys');
-      console.log('---------------');
+      console.log('Change in DB detected in:');
+      console.log('Row:', event.affectedRows[0].after.id);
+      console.log('Column:', event.affectedColumns.filter(item => item !== sqlImgCol));
+      console.log('---------------')
    },
 });
 instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
 instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
 
-//TTL function
-async function AddTTL(key) {
-   const currentTTL = await redisCli.ttl(key);
-   let newTTL = currentTTL + TTLbase;
-   if (newTTL > TTLmax) {
-      newTTL = TTLmax;
-   }
-   redisCli.expire(key, newTTL);
-   console.log('• Changed TTL of key', key, 'from', currentTTL, 's to', newTTL, 's');
-}
-
 //Cache miss query function
+
 async function QueryDatabase(sqlquery, params) {
    return sqlConn.query(sqlquery, [params]);
 }
 
 //Fetch function
+
 async function FetchQuery(res, rediskey, sqlquery, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
@@ -150,7 +154,9 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       console.log('Cache: Hit');
       res.send(rJson);
       RecordResponseTime();
-      AddTTL(key);
+      if (enableTTL = true) {
+         AddTTL(key);
+      }
    }
    else {
       console.log('Cache: Miss');
@@ -206,7 +212,12 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       else {
          dbJson = JSON.stringify(dbData);
       }
-      redisCli.setEx(key, TTLbase, dbJson);
+      if (enableTTL = true) {
+         redisCli.setEx(key, TTLbase, dbJson);
+      }
+      else {
+         redisCli.set(key, dbJson);
+      }
       console.log('•••••••••');
       for (let i = 0; i < logArray.length; i++) {
          //console.log('Img', i+1, 'width', logArray[i].width);
@@ -221,6 +232,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
 };
 
 //Exit procedure
+
 process.on('SIGINT', async () => {
    console.log('Exiting...');
    await redisCli.bgSave();
