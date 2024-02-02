@@ -35,17 +35,17 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'SELECT id, image FROM images', 'imgS', ['image'], ['id']);
+   FetchQuery(res, 'SELECT id, image FROM images', 'imgS', ['id'], ['image']);
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS-album'+album, ['image'], ['id']);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS-album'+album, ['id'], ['image']);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['image'], ['id']);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['id'], ['image']);
 });
 
 
@@ -105,7 +105,7 @@ async function AddTTL(key) {
 }
 
 //Image compression
-async function CompressImage(dbData, imgAttributes, otherAttributes) {
+async function CompressImage(dbData, otherAttributes, imgAttributes) {
    console.log('▶ Compression process starts')
    let compressedArray = [];
    let i = 1;
@@ -153,7 +153,7 @@ async function CompressImage(dbData, imgAttributes, otherAttributes) {
 
 //Fetch function
 
-async function FetchQuery(res, sqlquery, key, imgAttributes, otherAttributes) {
+async function FetchQuery(res, sqlquery, key, otherAttributes, imgAttributes) {
    startTime = new Date().getTime();
    const rJson = await redisCli.get(key);
    console.log('● Key:', key);
