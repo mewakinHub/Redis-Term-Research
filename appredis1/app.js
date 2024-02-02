@@ -27,17 +27,17 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'img', 'SELECT id, image FROM images;', '');
+   FetchQuery(res, 'SELECT id, image FROM images', 'img');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'img-album', 'SELECT id, image FROM images WHERE album=?', album);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'img-album'+album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'img-id', 'SELECT id, image FROM images WHERE id=?', id);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'img-id'+id);
 });
 
 
@@ -98,9 +98,8 @@ async function AddTTL(key) {
 
 //Fetch function
 
-async function FetchQuery(res, rediskey, sqlquery, params) {
+async function FetchQuery(res, sqlquery, key) {
    startTime = new Date().getTime();
-   const key = rediskey+params;
    const rJson = await redisCli.get(key);
    console.log('● Key:', key);
    if (rJson != null) {
@@ -111,7 +110,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    }
    else {
       console.log('○ Cache: Miss');
-      const [dbData] = await QueryDatabase(sqlquery, params);
+      const [dbData] = await QueryDatabase(sqlquery);
       res.send(dbData);
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);

@@ -35,17 +35,17 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'imgS', 'SELECT id, image FROM images;', '');
+   FetchQuery(res, 'SELECT id, image FROM images', 'imgS', ['image'], ['id']);
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'imgS-album', 'SELECT id, image FROM images WHERE album=?', album);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS-album'+album, ['image'], ['id']);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'imgS-id', 'SELECT id, image FROM images WHERE id=?', id);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['image'], ['id']);
 });
 
 
@@ -59,8 +59,8 @@ const sqlConn = mysql2.createConnection({
    database: sqlDatabase
 }).promise();
 
-async function QueryDatabase(sqlquery, params) {
-   return sqlConn.query(sqlquery, [params]);
+async function QueryDatabase(sqlquery) {
+   return sqlConn.query(sqlquery);
 }
 
 //Initialize Redis
@@ -104,11 +104,57 @@ async function AddTTL(key) {
    }
 }
 
+//Image compression
+async function CompressImage(dbData, imgAttributes, otherAttributes) {
+   console.log('▶ Compression process starts')
+   let compressedArray = [];
+   let i = 1;
+   for (const item of dbData) {
+      let obj = {}
+      for (j = 0; j < otherAttributes.length; j++) {
+         obj[otherAttributes[j]] = item[otherAttributes[j]]
+      }
+      let width;
+      let height;
+      let size;
+      let compressQualityMapped;
+      for (j = 0; j < imgAttributes.length; j++) {
+         const image = item[imgAttributes[j]];
+         await sharp(image)
+            .metadata()
+            .then(meta => {
+               width = meta.width;
+               height = meta.height;
+               size = meta.size;
+               if (forceCompressQuality <= 0) {
+                  const compressQualityRaw = (1 - (size / (width * height * compressStiffness)));
+                  compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
+               }
+               else {
+                  compressQualityNormalized = forceCompressQuality;
+               }
+               compressQualityMapped = Math.round(compressQualityNormalized * compressCorrection * 80);
+               console.log('▷ Img', i, 'quality:', compressQualityMapped*1.25 + '%');
+            });
+         const compressedImage = await sharp(image)
+            .webp({
+               quality: compressQualityMapped,
+               minSize: true,
+               effort: 0
+            })
+            .toBuffer();
+         obj[imgAttributes[j]] = compressedImage;
+      }
+      compressedArray.push(obj);
+      i++;
+   };
+   return JSON.stringify(compressedArray);
+}
+
 //Fetch function
 
-async function FetchQuery(res, rediskey, sqlquery, params) {
+async function FetchQuery(res, sqlquery, key, imgAttributes, otherAttributes) {
    startTime = new Date().getTime();
-   const key = rediskey+params;
    const rJson = await redisCli.get(key);
    console.log('● Key:', key);
    if (rJson != null) {
@@ -119,47 +165,12 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    }
    else {
       console.log('○ Cache: Miss');
-      const [dbData] = await QueryDatabase(sqlquery, params);
+      const [dbData] = await QueryDatabase(sqlquery);
       res.send(dbData);
       RecordResponseTime();
       let dbJson;
       if (enableCompression) {
-         console.log('▶ Compression process starts')
-         let dbCompressed = [];
-         let i = 1;
-         for (const item of dbData) {
-            let width;
-            let height;
-            let size;
-            let compressQualityMapped;
-            const image = item.image;
-            await sharp(image)
-               .metadata()
-               .then(meta => {
-                  width = meta.width;
-                  height = meta.height;
-                  size = meta.size;
-                  if (forceCompressQuality <= 0) {
-                     const compressQualityRaw = (1 - (size / (width * height * compressStiffness)));
-                     compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
-                  }
-                  else {
-                     compressQualityNormalized = forceCompressQuality;
-                  }
-                  compressQualityMapped = Math.round(compressQualityNormalized * compressCorrection * 80);
-                  console.log('▷ Img', i, 'quality:', compressQualityMapped*1.25 + '%');
-               });
-            const compressedImage = await sharp(image)
-               .webp({
-                  quality: compressQualityMapped,
-                  minSize: true,
-                  effort: 0
-               })
-               .toBuffer();
-            dbCompressed.push({image: compressedImage});
-            i++;
-         };
-         dbJson = JSON.stringify(dbCompressed);
+         dbJson = await CompressImage(dbData, imgAttributes, otherAttributes);
       }
       else {
          dbJson = JSON.stringify(dbData);

@@ -22,17 +22,17 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'SELECT id, image FROM images;', '');
+   FetchQuery(res, 'SELECT id, image FROM images');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE album=?', album);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE id=?', id);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE id=?'+id);
 });
 
 
@@ -46,8 +46,8 @@ const sqlConn = mysql2.createConnection({
    database: sqlDatabase
 }).promise();
 
-function QueryDatabase(sqlquery, params) {
-   return sqlConn.query(sqlquery, [params]);
+function QueryDatabase(sqlquery) {
+   return sqlConn.query(sqlquery);
 };
 
 //Initialize time measurements
@@ -72,9 +72,9 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 });
 
 //Fetch function
-async function FetchQuery(res, sqlquery, params) {
+async function FetchQuery(res, sqlquery) {
    startTime = new Date().getTime();
-   const [dbData] = await QueryDatabase(sqlquery, params);
+   const [dbData] = await QueryDatabase(sqlquery);
    res.send(dbData);
    RecordResponseTime();
 };
