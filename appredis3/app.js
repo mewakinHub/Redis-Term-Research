@@ -42,17 +42,17 @@ app.listen(port, () => {
 //Adjustable database-specific Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, keyName, 'SELECT '+sqlImgCol+' FROM images', '');
+   FetchQuery(res, imgKey, 'SELECT '+sqlImgCol+' FROM images', '');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, keyName+'-album', 'SELECT '+sqlImgCol+' FROM images WHERE album=?', album);
+   FetchQuery(res, imgKey+'-album', 'SELECT '+sqlImgCol+' FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, keyName+'-id', 'SELECT '+sqlImgCol+' FROM images WHERE id=?', id);
+   FetchQuery(res, imgKey+'-id', 'SELECT '+sqlImgCol+' FROM images WHERE id=?', id);
 });
 
 
