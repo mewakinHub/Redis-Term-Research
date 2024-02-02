@@ -35,17 +35,17 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'imgS', 'SELECT image FROM images;', '');
+   FetchQuery(res, 'imgS', 'SELECT id, image FROM images;', '');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'imgS-album', 'SELECT image FROM images WHERE album=?', album);
+   FetchQuery(res, 'imgS-album', 'SELECT id, image FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'imgS-id', 'SELECT image FROM images WHERE id=?', id);
+   FetchQuery(res, 'imgS-id', 'SELECT id, image FROM images WHERE id=?', id);
 });
 
 
@@ -141,11 +141,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
                   size = meta.size;
                   if (forceCompressQuality <= 0) {
                      const compressQualityRaw = (1 - (size / (width * height * compressStiffness)));
-                     compressQualityNormalized =
-                        Math.min(
-                           Math.max(compressQualityRaw, compressQualityMin),
-                           compressQualityMax
-                        );
+                     compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
                   }
                   else {
                      compressQualityNormalized = forceCompressQuality;

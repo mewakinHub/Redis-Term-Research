@@ -27,17 +27,17 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'img', 'SELECT image FROM images;', '');
+   FetchQuery(res, 'img', 'SELECT id, image FROM images;', '');
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'img-album', 'SELECT image FROM images WHERE album=?', album);
+   FetchQuery(res, 'img-album', 'SELECT id, image FROM images WHERE album=?', album);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'img-id', 'SELECT image FROM images WHERE id=?', id);
+   FetchQuery(res, 'img-id', 'SELECT id, image FROM images WHERE id=?', id);
 });
 
 

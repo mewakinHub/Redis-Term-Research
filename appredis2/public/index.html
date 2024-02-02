@@ -2,11 +2,16 @@
 <html style="zoom: 0.25">
 <head>
    <title>appredis2</title>
+   <style>
+      span {
+         font-size: 150px;
+      }
+   </style>
 </head>
 <body>
-   <h1 style="font-size: 200px;">Our 2.0 system</h1>
+   <h1 style="font-size: 200px;">Our system</h1>
    <p id="loadTime" style="font-size: 150px;">Total load time: </p>
-   <div id="imageResult">
+   <div id="result">
       <script>
          let startTime = new Date().getTime();
          //Change data fetch here
@@ -14,8 +19,14 @@
          //
             .then(response => response.json())
             .then(data => {
-               const imageResultDiv = document.getElementById('imageResult');
+               const resultDiv = document.getElementById('result');
                data.forEach(item => {
+                  const idData = item.id;
+                  const idElement = document.createElement('span');
+                  if (idData != undefined) {
+                     const idContent = document.createTextNode(idData);
+                     idElement.appendChild(idContent);
+                  }
                   const imageData = item.image; 
                   const uint8Array = new Uint8Array(imageData.data);
                   const blob = new Blob([uint8Array], { type: 'image/webp' });
@@ -24,7 +35,8 @@
                   imgElement.src = dataUrl;
                   imgElement.alt = 'Image';
                   imgElement.loading = 'lazy';
-                  imageResultDiv.appendChild(imgElement);
+                  resultDiv.appendChild(imgElement);
+                  resultDiv.appendChild(idElement);
                });
                let endTime = new Date().getTime();
                let loadTime = endTime - startTime;

@@ -25,8 +25,8 @@ let compressQualityMax = 0.8; //Float range (0, 1]. The ceiling of compressed im
 let compressCorrection = 0.95; //Float range (0, 1]. Not recommended to change. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80).
 const forceCompressQuality = 0; //Float range (0, 1]. Set to negative or zero to disable. Used for testing.
 
-const sqlRowAtt = 'id'; //String. Name of the column in the table which is the primary key (row number).
-const sqlImgAtt = 'image'; //String. Name of the column in the table which stores the BLOB images.
+const AttId = 'id'; //String. Name of the 'id' attribute in the table
+const AttImage = 'image'; //String. Name of the 'id' attribute in the table which stores the BLOB images.
 
 //Initialize Express
 
@@ -177,11 +177,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
                   size = meta.size;
                   if (forceCompressQuality <= 0) {
                      const compressQualityRaw = (1 - (size / (width * height * compressStiffness)));
-                     compressQualityNormalized =
-                        Math.min(
-                           Math.max(compressQualityRaw, compressQualityMin),
-                           compressQualityMax
-                        );
+                     compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
                   }
                   else {
                      compressQualityNormalized = forceCompressQuality;
