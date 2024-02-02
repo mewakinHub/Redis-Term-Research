@@ -143,6 +143,17 @@ async function QueryDatabase(sqlquery, params) {
    return sqlConn.query(sqlquery, [params]);
 }
 
+//TTL function
+async function AddTTL(key) {
+   const currentTTL = await redisCli.ttl(key);
+   let newTTL = currentTTL + TTLbase;
+   if (newTTL > TTLmax) {
+      newTTL = TTLmax;
+   }
+   redisCli.expire(key, newTTL);
+   console.log('• Changed TTL of key', key, 'from', currentTTL, 's to', newTTL, 's');
+}
+
 //Fetch function
 
 async function FetchQuery(res, rediskey, sqlquery, params) {
@@ -154,7 +165,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       console.log('Cache: Hit');
       res.send(rJson);
       RecordResponseTime();
-      if (enableTTL = true) {
+      if (enableTTL) {
          AddTTL(key);
       }
    }
@@ -212,7 +223,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       else {
          dbJson = JSON.stringify(dbData);
       }
-      if (enableTTL = true) {
+      if (enableTTL) {
          redisCli.setEx(key, TTLbase, dbJson);
       }
       else {

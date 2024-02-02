@@ -2,69 +2,24 @@ const express = require('express');
 const mysql2 = require('mysql2');
 
 //Adjustable variables
-const port = 1000; //Integer range [1000, infinity). Server port
 
-//Adjustable database-specific variables
-const sqlHost = 'localhost';
-const sqlUser = 'root';
-const sqlPassword = 'root';
-const sqlDatabase = 'redisresearch';
+let port = 1000; //Integer range [1000, infinity). Server port
 
-//Adjustable database-specific initialization
-const sqlConn = mysql2.createConnection({
-   host: sqlHost,
-   user: sqlUser,
-   password: sqlPassword,
-   database: sqlDatabase
-}).promise();
-
-//Adjustable database-specific cache miss query function
-function QueryDatabase(sqlquery, params) {
-   return sqlConn.query(sqlquery, [params]);
-};
-
-
+const sqlHost = 'localhost'; //String. Address of the webpage.
+const sqlUser = 'root'; //String. MySQL user.
+const sqlPassword = 'root'; //String. MySQL password.
+const sqlDatabase = 'redisresearch'; //String. MySQL password.
 
 //Initialize Express
+
 const app = express();
 app.use(express.static('public'));
 app.listen(port, () => {
    console.log('---------------');
-   console.log('• Server is running on port', port);
-   console.log('---------------');
+   console.log('✔ Server is running on port', port);
 });
 
-//Initialize time measurements
-
-let startTime = 0;
-let endTime = 0;
-let responseTime = 0;
-let loadTime = 0;
-
-app.get('/loadtime/:loadtime', async (req, res) => {
-   loadTime = req.params.loadtime;
-   if (responseTime != 0) {
-      console.log('Page render time:', loadTime-responseTime, 'ms');
-      console.log('Total load time:', parseInt(loadTime), 'ms');
-      console.log('---------------');
-   }
-});
-
-function RecordResponseTime() {
-   endTime = new Date().getTime();
-   responseTime = endTime - startTime;
-   console.log('Response time:', responseTime, 'ms');
-};
-
-//Fetch function
-async function FetchQuery(res, sqlquery, params) {
-   startTime = new Date().getTime();
-   const [dbData] = await QueryDatabase(sqlquery, params);
-   res.send(dbData);
-   RecordResponseTime();
-};
-
-//Express API endpoints
+//Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
    FetchQuery(res, 'SELECT image FROM images;', '');
@@ -80,9 +35,53 @@ app.get('/id/:id', async (req, res) => {
    FetchQuery(res, 'SELECT image FROM images WHERE id=?', id);
 });
 
+
+
+//Initialize database
+
+const sqlConn = mysql2.createConnection({
+   host: sqlHost,
+   user: sqlUser,
+   password: sqlPassword,
+   database: sqlDatabase
+}).promise();
+
+function QueryDatabase(sqlquery, params) {
+   return sqlConn.query(sqlquery, [params]);
+};
+
+//Initialize time measurements
+
+let startTime = 0;
+let endTime = 0;
+let responseTime = 0;
+let loadTime = 0;
+
+function RecordResponseTime() {
+   endTime = new Date().getTime();
+   responseTime = endTime - startTime;
+   console.log('● Response time:', responseTime, 'ms');
+};
+
+app.get('/loadtime/:loadtime', async (req, res) => {
+   loadTime = req.params.loadtime;
+   if (responseTime != 0) {
+      console.log('○ Page render time:', loadTime-responseTime, 'ms');
+      console.log('○ Total load time:', parseInt(loadTime), 'ms');
+   }
+});
+
+//Fetch function
+async function FetchQuery(res, sqlquery, params) {
+   startTime = new Date().getTime();
+   const [dbData] = await QueryDatabase(sqlquery, params);
+   res.send(dbData);
+   RecordResponseTime();
+};
+
 //Exit procedure
 process.on('SIGINT', async () => {
-   console.log('Exiting...');
+   console.log('⌫  Exiting...');
    console.log('---------------');
    sqlConn.end();
    process.exit();
