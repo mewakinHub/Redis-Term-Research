@@ -124,6 +124,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       RecordResponseTime();
       let dbJson;
       if (enableCompression) {
+         console.log('▶ Compression process starts')
          let dbCompressed = [];
          let i = 1;
          for (const item of dbData) {
@@ -150,7 +151,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
                      compressQualityNormalized = forceCompressQuality;
                   }
                   compressQualityMapped = Math.round(compressQualityNormalized * compressCorrection * 80);
-                  console.log('➤  Img', i, 'quality:', compressQualityMapped*1.25 + '%');
+                  console.log('▷ Img', i, 'quality:', compressQualityMapped*1.25 + '%');
                });
             const compressedImage = await sharp(image)
                .webp({
@@ -169,13 +170,13 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       }
       if (enableTTL) {
          redisCli.setEx(key, TTLbase, dbJson);
-         console.log('➤  Set key', key, 'with TTL', TTLbase, 's');
+         console.log('▷ Set key', key, 'with TTL', TTLbase, 's');
       }
       else {
          redisCli.set(key, dbJson);
-         console.log('➤  Set key', key, 'with no TTL');
+         console.log('▷ Set key', key, 'with no TTL');
       }
-      console.log('➤  Approximate size in Redis:', Math.round(dbJson.length / 1.81), 'bytes');
+      console.log('▷ Approximate size in Redis:', Math.round(dbJson.length / 1.81), 'bytes');
    }
 };
 

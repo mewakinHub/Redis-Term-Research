@@ -117,13 +117,13 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
       const dbJson = JSON.stringify(dbData);
       if (enableTTL) {
          redisCli.setEx(key, TTLbase, dbJson);
-         console.log('➤  Set key', key, 'with TTL', TTLbase, 's');
+         console.log('▶ Set key', key, 'with TTL', TTLbase, 's');
       }
       else {
          redisCli.set(key, dbJson);
-         console.log('➤  Set key', key, 'with no TTL');
+         console.log('▶ Set key', key, 'with no TTL');
       }
-      console.log('➤  Approximate size in Redis:', Math.round(dbJson.length / 1.81), 'bytes');
+      console.log('▷ Approximate size in Redis:', Math.round(dbJson.length / 1.81), 'bytes');
    }
 };
 
