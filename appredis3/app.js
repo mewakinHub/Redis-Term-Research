@@ -13,8 +13,6 @@ const sqlHost = 'localhost'; //String. Address of the webpage.
 const sqlUser = 'root'; //String. MySQL user.
 const sqlPassword = 'root'; //String. MySQL password.
 const sqlDatabase = 'redisresearch'; //String. MySQL password.
-const AttId = 'id'; //String. Name of the 'id' attribute in the table
-const AttImage = 'image'; //String. Name of the 'id' attribute in the table which stores the BLOB images.
 
 const enableTTL = true; //true for false. Whether to use TTL or not. (true = cache expires, false = cache never expires)
 let TTLbase = 3600; //Integer range [1, infinity). Base time-to-live in seconds of a Redis cache
@@ -39,32 +37,27 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'SELECT id, image FROM images', 'imgS', ['id'], ['image']);
+   FetchQuery(res, 'SELECT id, image FROM images', 'imgS', ['images.id'], ['images.image']);
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS-album'+album, ['id'], ['image']);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS-album'+album, ['images.id'], ['images.image']);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['id'], ['image']);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['images.id'], ['images.image']);
 });
 
+//Adjustable metadata logging
 
+async function LogMetadata(redisKey, query) {
+   QueryDatabase(`INSERT INTO metadata (redisKey, testQuery) VALUES ("`+redisKey+`", "SELECT id FROM `+query.split(' FROM ')[1]+`")`);
+}
 
-//Initialize database
-
-const sqlConn = mysql2.createConnection({
-   host: sqlHost,
-   user: sqlUser,
-   password: sqlPassword,
-   database: sqlDatabase
-}).promise();
-
-async function QueryDatabase(sqlquery) {
-   return sqlConn.query(sqlquery);
+async function DeleteMetadata(redisKey) {
+   QueryDatabase(`DELETE FROM metadata WHERE redisKey = "`+redisKey+`"`);
 }
 
 //Initialize database listener
@@ -81,6 +74,42 @@ instance.start()
       console.log('✔ Listening to change in DB')
    })
    .catch(err => console.error('⚠︎ MySQLEvent failed to start.', err));
+
+//Adjustable outdated cache handler
+
+instance.addTrigger({
+   name: 'DetectChange',
+   expression: 'redisresearch.*',
+   statement: MySQLEvents.STATEMENTS.ALL,
+   onEvent: async (event) => {
+      if (event.table != 'metadata') {
+         console.log('▶ A change in DB detected');
+         console.log('▷ Table:', event.table);
+         console.log('▷ Row:', event.affectedRows[0].before['id']);
+         const affectedColumns = event.affectedColumns.filter(item => item !== 'image');
+         console.log('▷ Column:', affectedColumns);
+         console.log('▷ Value before:', event.affectedRows[0].before[affectedColumns[0]]);
+         console.log('▷ Value after:', event.affectedRows[0].after[affectedColumns[0]]);
+      }
+   },
+});
+instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
+instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
+
+
+
+//Initialize database
+
+const sqlConn = mysql2.createConnection({
+   host: sqlHost,
+   user: sqlUser,
+   password: sqlPassword,
+   database: sqlDatabase
+}).promise();
+
+async function QueryDatabase(query) {
+   return sqlConn.query(query);
+}
 
 //Initialize Redis
 
@@ -111,50 +140,36 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 
 //TTL function
 
-async function AddTTL(key) {
+async function AddTTL(redisKey) {
    if (enableTTL) {
-      const currentTTL = await redisCli.ttl(key);
+      const currentTTL = await redisCli.ttl(redisKey);
       let newTTL = currentTTL + TTLbase;
       if (newTTL > TTLmax) {
          newTTL = TTLmax;
       }
-      redisCli.expire(key, newTTL);
-      console.log('○ Changed TTL of key', key, 'from', currentTTL, 's to', newTTL, 's');
+      redisCli.expire(redisKey, newTTL);
+      console.log('○ Changed TTL of key', redisKey, 'from', currentTTL, 's to', newTTL, 's');
    }
 }
 
-//Outdated cache handler
-
-instance.addTrigger({
-   name: 'DetectChange',
-   expression: 'redisresearch.*',
-   statement: MySQLEvents.STATEMENTS.ALL,
-   onEvent: async (event) => {
-      console.log('▶ A change in DB detected');
-      console.log('▷ Table:', event.table);
-      console.log('▷ Row:', event.affectedRows[0].after.id);
-      console.log('▷ Column:', event.affectedColumns.filter(item => item !== sqlImgAtt));
-   },
-});
-instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
-instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
-
 //Image compression
-async function CompressImage(dbData, otherAttributes, imgAttributes) {
+async function CompressImage(dbData, genericAtt, imgAtt) {
    console.log('▶ Compression process starts')
    let compressedArray = [];
    let i = 1;
    for (const item of dbData) {
       let obj = {}
-      for (j = 0; j < otherAttributes.length; j++) {
-         obj[otherAttributes[j]] = item[otherAttributes[j]]
+      for (j = 0; j < genericAtt.length; j++) {
+         const attribute = genericAtt[j].split('.')[1]
+         obj[attribute] = item[attribute]
       }
       let width;
       let height;
       let size;
       let compressQualityMapped;
-      for (j = 0; j < imgAttributes.length; j++) {
-         const image = item[imgAttributes[j]];
+      for (j = 0; j < imgAtt.length; j++) {
+         const attribute = imgAtt[j].split('.')[1] 
+         const image = item[attribute];
          await sharp(image)
             .metadata()
             .then(meta => {
@@ -178,7 +193,7 @@ async function CompressImage(dbData, otherAttributes, imgAttributes) {
                effort: 0
             })
             .toBuffer();
-         obj[imgAttributes[j]] = compressedImage;
+         obj[attribute] = compressedImage;
       }
       compressedArray.push(obj);
       i++;
@@ -188,35 +203,37 @@ async function CompressImage(dbData, otherAttributes, imgAttributes) {
 
 //Fetch function
 
-async function FetchQuery(res, sqlquery, key, otherAttributes, imgAttributes) {
+async function FetchQuery(res, query, redisKey, genericAtt, imgAtt) {
    startTime = new Date().getTime();
-   const rJson = await redisCli.get(key);
-   console.log('● Key:', key);
+   const rJson = await redisCli.get(redisKey);
+   console.log('● Key:', redisKey);
    if (rJson != null) {
       console.log('○ Cache: Hit');
       res.send(rJson);
       RecordResponseTime();
-      AddTTL(key);
+      DeleteMetadata(redisKey);
+      AddTTL(redisKey);
    }
    else {
       console.log('○ Cache: Miss');
-      const [dbData] = await QueryDatabase(sqlquery);
+      const [dbData] = await QueryDatabase(query);
       res.send(dbData);
       RecordResponseTime();
+      LogMetadata(redisKey, query);
       let dbJson;
       if (enableCompression) {
-         dbJson = await CompressImage(dbData, imgAttributes, otherAttributes);
+         dbJson = await CompressImage(dbData, genericAtt, imgAtt);
       }
       else {
          dbJson = JSON.stringify(dbData);
       }
       if (enableTTL) {
-         redisCli.setEx(key, TTLbase, dbJson);
-         console.log('▷ Set key', key, 'with TTL', TTLbase, 's');
+         redisCli.setEx(redisKey, TTLbase, dbJson);
+         console.log('▷ Set key', redisKey, 'with TTL', TTLbase, 's');
       }
       else {
-         redisCli.set(key, dbJson);
-         console.log('▷ Set key', key, 'with no TTL');
+         redisCli.set(redisKey, dbJson);
+         console.log('▷ Set key', redisKey, 'with no TTL');
       }
       console.log('▷ Approximate size in Redis:', Math.round(dbJson.length / 1.81), 'bytes');
    }

@@ -44,9 +44,9 @@ function RecordResponseTime() {
 };
 
 //Fetch function
-async function FetchQuery(res, sqlquery, params) {
+async function FetchQuery(res, query, params) {
    startTime = new Date().getTime();
-   const [dbData] = await sqlConn.query(sqlquery, [params]);
+   const [dbData] = await sqlConn.query(query, [params]);
    const dbBase64 = dbData.map(item => {
       const imageData = item.image;
       const base64Image = Buffer.from(imageData).toString('base64');

@@ -46,8 +46,8 @@ const sqlConn = mysql2.createConnection({
    database: sqlDatabase
 }).promise();
 
-function QueryDatabase(sqlquery) {
-   return sqlConn.query(sqlquery);
+function QueryDatabase(query) {
+   return sqlConn.query(query);
 };
 
 //Initialize time measurements
@@ -72,9 +72,9 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 });
 
 //Fetch function
-async function FetchQuery(res, sqlquery) {
+async function FetchQuery(res, query) {
    startTime = new Date().getTime();
-   const [dbData] = await QueryDatabase(sqlquery);
+   const [dbData] = await QueryDatabase(query);
    res.send(dbData);
    RecordResponseTime();
 };

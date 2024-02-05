@@ -76,7 +76,7 @@ async function PrimeCache(key, dbData) {
 }
 
 
-async function FetchQuery(res, rediskey, sqlquery, params) {
+async function FetchQuery(res, rediskey, query, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
    const rBuffer = await redisCli.get(key);
@@ -98,7 +98,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    else {
       console.log('Key:', key);
       console.log('Cache: Miss');
-      const [dbData] = await sqlConn.query(sqlquery, [params]);
+      const [dbData] = await sqlConn.query(query, [params]);
       res.send(dbData);
       RecordResponseTime();
       PrimeCache(key, dbData);

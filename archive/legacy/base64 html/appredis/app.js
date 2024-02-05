@@ -93,7 +93,7 @@ async function AddTTL(key) {
 }
 
 //Fetch function
-async function FetchQuery(res, rediskey, sqlquery, params) {
+async function FetchQuery(res, rediskey, query, params) {
    startTime = new Date().getTime();
    const key = rediskey+params;
    const rJson = await redisCli.get(key);
@@ -106,7 +106,7 @@ async function FetchQuery(res, rediskey, sqlquery, params) {
    }
    else {
       console.log('Cache: Miss');
-      const [dbData] = await sqlConn.query(sqlquery, [params]);
+      const [dbData] = await sqlConn.query(query, [params]);
       const dbBase64 = dbData.map(item => {
          const imageData = item.image;
          const base64Image = Buffer.from(imageData).toString('base64');

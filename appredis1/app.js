@@ -51,8 +51,8 @@ const sqlConn = mysql2.createConnection({
    database: sqlDatabase
 }).promise();
 
-async function QueryDatabase(sqlquery, params) {
-   return sqlConn.query(sqlquery, [params]);
+async function QueryDatabase(query, params) {
+   return sqlConn.query(query, [params]);
 }
 
 //Initialize Redis
@@ -84,43 +84,43 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 
 //TTL function
 
-async function AddTTL(key) {
+async function AddTTL(redisKey) {
    if (enableTTL) {
-      const currentTTL = await redisCli.ttl(key);
+      const currentTTL = await redisCli.ttl(redisKey);
       let newTTL = currentTTL + TTLbase;
       if (newTTL > TTLmax) {
          newTTL = TTLmax;
       }
-      redisCli.expire(key, newTTL);
-      console.log('○ Changed TTL of key', key, 'from', currentTTL, 's to', newTTL, 's');
+      redisCli.expire(redisKey, newTTL);
+      console.log('○ Changed TTL of key', redisKey, 'from', currentTTL, 's to', newTTL, 's');
    }
 }
 
 //Fetch function
 
-async function FetchQuery(res, sqlquery, key) {
+async function FetchQuery(res, query, redisKey) {
    startTime = new Date().getTime();
-   const rJson = await redisCli.get(key);
-   console.log('● Key:', key);
+   const rJson = await redisCli.get(redisKey);
+   console.log('● Key:', redisKey);
    if (rJson != null) {
       console.log('○ Cache: Hit');
       res.send(rJson);
       RecordResponseTime();
-      AddTTL(key);
+      AddTTL(redisKey);
    }
    else {
       console.log('○ Cache: Miss');
-      const [dbData] = await QueryDatabase(sqlquery);
+      const [dbData] = await QueryDatabase(query);
       res.send(dbData);
       RecordResponseTime();
       const dbJson = JSON.stringify(dbData);
       if (enableTTL) {
-         redisCli.setEx(key, TTLbase, dbJson);
-         console.log('▶ Set key', key, 'with TTL', TTLbase, 's');
+         redisCli.setEx(redisKey, TTLbase, dbJson);
+         console.log('▶ Set key', redisKey, 'with TTL', TTLbase, 's');
       }
       else {
-         redisCli.set(key, dbJson);
-         console.log('▶ Set key', key, 'with no TTL');
+         redisCli.set(redisKey, dbJson);
+         console.log('▶ Set key', redisKey, 'with no TTL');
       }
       console.log('▷ Approximate size in Redis:', Math.round(dbJson.length / 1.81), 'bytes');
    }
