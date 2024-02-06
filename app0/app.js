@@ -60,10 +60,11 @@ let loadTime = 0;
 function RecordResponseTime() {
    endTime = new Date().getTime();
    responseTime = endTime - startTime;
-   console.log('● Response time:', responseTime, 'ms');
+   console.log('○ Response time:', responseTime, 'ms');
 };
 
 app.get('/loadtime/:loadtime', async (req, res) => {
+   
    loadTime = req.params.loadtime;
    if (responseTime != 0) {
       console.log('○ Page render time:', loadTime-responseTime, 'ms');
@@ -73,6 +74,7 @@ app.get('/loadtime/:loadtime', async (req, res) => {
 
 //Fetch function
 async function FetchQuery(res, query) {
+   console.log('● API called');
    startTime = new Date().getTime();
    const [dbData] = await QueryDatabase(query);
    res.send(dbData);

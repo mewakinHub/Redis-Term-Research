@@ -106,7 +106,7 @@ async function AddTTL(redisKey) {
 
 //Image compression
 async function CompressImage(dbData, genericAtt, imgAtt) {
-   console.log('▶ Compression process starts')
+   console.log('▶ Compression process begins')
    let compressedArray = [];
    let i = 1;
    for (const item of dbData) {
@@ -154,9 +154,10 @@ async function CompressImage(dbData, genericAtt, imgAtt) {
 //Fetch function
 
 async function FetchQuery(res, query, redisKey, genericAtt, imgAtt) {
+   console.log('● API called');
    startTime = new Date().getTime();
    const rJson = await redisCli.get(redisKey);
-   console.log('● Key:', redisKey);
+   console.log('○ Key:', redisKey);
    if (rJson != null) {
       console.log('○ Cache: Hit');
       res.send(rJson);

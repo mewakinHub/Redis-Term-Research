@@ -25,6 +25,8 @@ let compressQualityMax = 0.8; //Float range (0, 1]. The ceiling of compressed im
 let compressCorrection = 0.95; //Float range (0, 1]. Not recommended to change. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80).
 const forceCompressQuality = 0; //Float range (0, 1]. Set to negative or zero to disable. Used for testing.
 
+const primaryKeyAtt = 'id';
+
 //Initialize Express
 
 const app = express();
@@ -37,27 +39,64 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'SELECT id, image FROM images', 'imgS', ['images.id'], ['images.image']);
-});
+   FetchQuery(res, 'SELECT id, image FROM images', 'imgS', ['id'], ['image']);
+})
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS-album'+album, ['images.id'], ['images.image']);
-});
+   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS-album'+album, ['id'], ['image']);
+})
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['images.id'], ['images.image']);
-});
+   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['id'], ['image']);
+})
+
+app.get('/test', async (req, res) => {
+   FetchQuery(res, 'SELECT id, album, value FROM images', 'test', ['id', 'album', 'value'], []);
+})
 
 //Adjustable metadata logging
 
-async function LogMetadata(redisKey, query) {
-   QueryDatabase(`INSERT INTO metadata (redisKey, testQuery) VALUES ("`+redisKey+`", "SELECT id FROM `+query.split(' FROM ')[1]+`")`);
+async function CheckLogEntry(redisKey) {
+   var [check] = await QueryDatabase(`SELECT 1 FROM metadata_query WHERE redisKey='`+redisKey+`'`);
+   if (check.length != 0) {
+      console.log(`◻ Log entry already exists`);
+      return true;
+   }
+   else {
+      return false;
+   }
 }
 
-async function DeleteMetadata(redisKey) {
-   QueryDatabase(`DELETE FROM metadata WHERE redisKey = "`+redisKey+`"`);
+async function LogMetadata(redisKey, query) {
+   console.log('◼ Logging begins');
+   const logExists = await CheckLogEntry(redisKey);
+   if (!logExists) {
+      QueryDatabase(`INSERT INTO metadata_query (redisKey, query) VALUES ('`+redisKey+`', '`+query+`')`);
+      console.log('◻ Logged metadata_query');
+      var [rows] = await QueryDatabase(`SELECT `+primaryKeyAtt+` FROM`+query.split('FROM')[1]);
+      for (const item of rows) {
+         QueryDatabase(`INSERT INTO metadata_row (redisKey, row) VALUES ('`+redisKey+`', `+item.id+`)`);
+      }
+      console.log('◻ Logged metadata_row');
+      var rowOrder = '';
+      var count = rows.length;
+      for (const item of rows) {
+         rowOrder += item.id;
+         if (count > 1) {
+            rowOrder += ','
+         }
+         count--;
+      }
+      QueryDatabase(`INSERT INTO metadata_roworder (redisKey, rowOrder) VALUES ('`+redisKey+`', '`+rowOrder+`')`);
+      console.log('◻ Logged metadata_roworder');
+      const columns = query.match(/SELECT\s+(.+?)\s+FROM/i)[1].split(',').map(name => name.trim());
+      for (const item of columns) {
+         QueryDatabase(`INSERT INTO metadata_column (redisKey, columnName) VALUES ('`+redisKey+`', '`+item+`')`)
+      }
+      console.log('◻ Logged metadata_column');
+   }
 }
 
 //Initialize database listener
@@ -79,7 +118,7 @@ instance.start()
 
 instance.addTrigger({
    name: 'DetectChange',
-   expression: 'redisresearch.*',
+   expression: 'redisresearch.images',
    statement: MySQLEvents.STATEMENTS.ALL,
    onEvent: async (event) => {
       if (event.table != 'metadata') {
@@ -92,7 +131,7 @@ instance.addTrigger({
          console.log('▷ Value after:', event.affectedRows[0].after[affectedColumns[0]]);
       }
    },
-});
+})
 instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
 instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
 
@@ -128,7 +167,7 @@ function RecordResponseTime() {
    endTime = new Date().getTime();
    responseTime = endTime - startTime;
    console.log('○ Response time:', responseTime, 'ms');
-};
+}
 
 app.get('/loadtime/:loadtime', async (req, res) => {
    loadTime = req.params.loadtime;
@@ -136,7 +175,7 @@ app.get('/loadtime/:loadtime', async (req, res) => {
       console.log('○ Page render time:', loadTime-responseTime, 'ms');
       console.log('○ Total load time:', parseInt(loadTime), 'ms');
    }
-});
+})
 
 //TTL function
 
@@ -154,64 +193,73 @@ async function AddTTL(redisKey) {
 
 //Image compression
 async function CompressImage(dbData, genericAtt, imgAtt) {
-   console.log('▶ Compression process starts')
-   let compressedArray = [];
-   let i = 1;
-   for (const item of dbData) {
-      let obj = {}
-      for (j = 0; j < genericAtt.length; j++) {
-         const attribute = genericAtt[j].split('.')[1]
-         obj[attribute] = item[attribute]
+   console.log('▶ Compression process begins');
+   if (imgAtt.length == 0) {
+      console.log('▷ No images to be compressed');
+      return JSON.stringify(dbData);
+   }
+   else {
+      let compressedArray = [];
+      let i = 1;
+      for (const item of dbData) {
+         let obj = {}
+         if (genericAtt == 0) {
+            console.log('▷ No generic attributes')
+         }
+         else {
+            for (j = 0; j < genericAtt.length; j++) {
+               obj[genericAtt[j]] = item[genericAtt[j]]
+            }
+         }
+         let width;
+         let height;
+         let size;
+         let compressQualityMapped;
+         for (j = 0; j < imgAtt.length; j++) {
+            const image = item[imgAtt[j]];
+            await sharp(image)
+               .metadata()
+               .then(meta => {
+                  width = meta.width;
+                  height = meta.height;
+                  size = meta.size;
+                  if (forceCompressQuality <= 0) {
+                     const compressQualityRaw = (1 - (size / (width * height * compressStiffness)));
+                     compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
+                  }
+                  else {
+                     compressQualityNormalized = forceCompressQuality;
+                  }
+                  compressQualityMapped = Math.round(compressQualityNormalized * compressCorrection * 80);
+                  console.log('▷ Img', i, 'quality:', compressQualityMapped*1.25 + '%');
+               });
+            const compressedImage = await sharp(image)
+               .webp({
+                  quality: compressQualityMapped,
+                  minSize: true,
+                  effort: 0
+               })
+               .toBuffer();
+               obj[imgAtt[j]] = compressedImage;
+         }
+         compressedArray.push(obj);
+         i++;
       }
-      let width;
-      let height;
-      let size;
-      let compressQualityMapped;
-      for (j = 0; j < imgAtt.length; j++) {
-         const attribute = imgAtt[j].split('.')[1] 
-         const image = item[attribute];
-         await sharp(image)
-            .metadata()
-            .then(meta => {
-               width = meta.width;
-               height = meta.height;
-               size = meta.size;
-               if (forceCompressQuality <= 0) {
-                  const compressQualityRaw = (1 - (size / (width * height * compressStiffness)));
-                  compressQualityNormalized = Math.min(Math.max(compressQualityRaw, compressQualityMin), compressQualityMax);
-               }
-               else {
-                  compressQualityNormalized = forceCompressQuality;
-               }
-               compressQualityMapped = Math.round(compressQualityNormalized * compressCorrection * 80);
-               console.log('▷ Img', i, 'quality:', compressQualityMapped*1.25 + '%');
-            });
-         const compressedImage = await sharp(image)
-            .webp({
-               quality: compressQualityMapped,
-               minSize: true,
-               effort: 0
-            })
-            .toBuffer();
-         obj[attribute] = compressedImage;
-      }
-      compressedArray.push(obj);
-      i++;
+      return JSON.stringify(compressedArray);
    };
-   return JSON.stringify(compressedArray);
 }
 
 //Fetch function
 
 async function FetchQuery(res, query, redisKey, genericAtt, imgAtt) {
+   console.log('● API called');
    startTime = new Date().getTime();
    const rJson = await redisCli.get(redisKey);
-   console.log('● Key:', redisKey);
+   console.log('○ Key:', redisKey);
    if (rJson != null) {
       console.log('○ Cache: Hit');
       res.send(rJson);
       RecordResponseTime();
-      DeleteMetadata(redisKey);
       AddTTL(redisKey);
    }
    else {
@@ -219,7 +267,6 @@ async function FetchQuery(res, query, redisKey, genericAtt, imgAtt) {
       const [dbData] = await QueryDatabase(query);
       res.send(dbData);
       RecordResponseTime();
-      LogMetadata(redisKey, query);
       let dbJson;
       if (enableCompression) {
          dbJson = await CompressImage(dbData, genericAtt, imgAtt);
@@ -236,8 +283,9 @@ async function FetchQuery(res, query, redisKey, genericAtt, imgAtt) {
          console.log('▷ Set key', redisKey, 'with no TTL');
       }
       console.log('▷ Approximate size in Redis:', Math.round(dbJson.length / 1.81), 'bytes');
+      LogMetadata(redisKey, query);
    }
-};
+}
 
 //Exit procedure
 
@@ -249,4 +297,4 @@ process.on('SIGINT', async () => {
    sqlConn.end();
    redisCli.quit();
    process.exit();
-});
+})

@@ -99,9 +99,10 @@ async function AddTTL(redisKey) {
 //Fetch function
 
 async function FetchQuery(res, query, redisKey) {
+   console.log('● API called');
    startTime = new Date().getTime();
    const rJson = await redisCli.get(redisKey);
-   console.log('● Key:', redisKey);
+   console.log('○ Key:', redisKey);
    if (rJson != null) {
       console.log('○ Cache: Hit');
       res.send(rJson);
