@@ -16,9 +16,59 @@ ALTER TABLE `images`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 COMMIT;
 
-CREATE TABLE `metadata` (
+CREATE TABLE `metadata_column` (
   `redisKey` varchar(255) NOT NULL,
+  `columnName` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `metadata` 
-  ADD PRIMARY KEY(`redisKey`);
+CREATE TABLE `metadata_conditions` (
+  `redisKey` varchar(255) NOT NULL,
+  `conditionType` varchar(255) NOT NULL,
+  `columnName` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `metadata_query` (
+  `redisKey` varchar(255) NOT NULL,
+  `query` varchar(510) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `metadata_row` (
+  `redisKey` varchar(255) NOT NULL,
+  `row` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `metadata_roworder` (
+  `redisKey` varchar(255) NOT NULL,
+  `rowOrder` varchar(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `metadata_column`
+  ADD PRIMARY KEY (`redisKey`,`columnName`);
+
+ALTER TABLE `metadata_conditions`
+  ADD PRIMARY KEY (`redisKey`,`conditionType`,`columnName`,`value`);
+
+ALTER TABLE `metadata_query`
+  ADD PRIMARY KEY (`redisKey`);
+
+ALTER TABLE `metadata_row`
+  ADD PRIMARY KEY (`redisKey`,`row`),
+  ADD KEY `row` (`row`);
+
+ALTER TABLE `metadata_roworder`
+  ADD PRIMARY KEY (`redisKey`);
+
+ALTER TABLE `metadata_column`
+  ADD CONSTRAINT `metadata_column_ibfk_1` FOREIGN KEY (`redisKey`) REFERENCES `metadata_query` (`redisKey`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `metadata_conditions`
+  ADD CONSTRAINT `metadata_conditions_ibfk_1` FOREIGN KEY (`redisKey`) REFERENCES `metadata_query` (`redisKey`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `metadata_row`
+  ADD CONSTRAINT `metadata_row_ibfk_1` FOREIGN KEY (`row`) REFERENCES `images` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `metadata_row_ibfk_2` FOREIGN KEY (`redisKey`) REFERENCES `metadata_query` (`redisKey`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE `metadata_roworder`
+  ADD CONSTRAINT `metadata_roworder_ibfk_1` FOREIGN KEY (`redisKey`) REFERENCES `metadata_query` (`redisKey`) ON DELETE CASCADE ON UPDATE CASCADE;
+COMMIT;

@@ -26,6 +26,7 @@ let compressCorrection = 0.95; //Float range (0, 1]. Not recommended to change. 
 const forceCompressQuality = 0; //Float range (0, 1]. Set to negative or zero to disable. Used for testing.
 
 const primaryKeyAtt = 'id';
+const mainTable = 'images';
 
 //Initialize Express
 
@@ -52,8 +53,12 @@ app.get('/id/:id', async (req, res) => {
    FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['id'], ['image']);
 })
 
-app.get('/test', async (req, res) => {
-   FetchQuery(res, 'SELECT id, album, value FROM images', 'test', ['id', 'album', 'value'], []);
+app.get('/info', async (req, res) => {
+   FetchQuery(res, 'SELECT id, album, value FROM images', 'info', ['id', 'album', 'value'], []);
+})
+
+app.get('/infotest', async (req, res) => {
+   FetchQuery(res, 'SELECT id, album, value FROM images WHERE id=1 OR album=2', 'infotest', ['id', 'album', 'value'], []);
 })
 
 //Adjustable metadata logging
@@ -75,7 +80,7 @@ async function LogMetadata(redisKey, query) {
    if (!logExists) {
       QueryDatabase(`INSERT INTO metadata_query (redisKey, query) VALUES ('`+redisKey+`', '`+query+`')`);
       console.log('◻ Logged metadata_query');
-      var [rows] = await QueryDatabase(`SELECT `+primaryKeyAtt+` FROM`+query.split('FROM')[1]);
+      const [rows] = await QueryDatabase(`SELECT `+primaryKeyAtt+` FROM`+query.split('FROM')[1]);
       for (const item of rows) {
          QueryDatabase(`INSERT INTO metadata_row (redisKey, row) VALUES ('`+redisKey+`', `+item.id+`)`);
       }
@@ -85,7 +90,7 @@ async function LogMetadata(redisKey, query) {
       for (const item of rows) {
          rowOrder += item.id;
          if (count > 1) {
-            rowOrder += ','
+            rowOrder += ',';
          }
          count--;
       }
@@ -93,9 +98,19 @@ async function LogMetadata(redisKey, query) {
       console.log('◻ Logged metadata_roworder');
       const columns = query.match(/SELECT\s+(.+?)\s+FROM/i)[1].split(',').map(name => name.trim());
       for (const item of columns) {
-         QueryDatabase(`INSERT INTO metadata_column (redisKey, columnName) VALUES ('`+redisKey+`', '`+item+`')`)
+         QueryDatabase(`INSERT INTO metadata_column (redisKey, columnName) VALUES ('`+redisKey+`', '`+item+`')`);
       }
       console.log('◻ Logged metadata_column');
+      var [columnNames] = await QueryDatabase(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '`+mainTable+`'`);
+      columnNames = columnNames.map(columnNames => columnNames.COLUMN_NAME);
+      conditions = query.split('FROM ')[1];
+      for (const item of columns) {
+         const regex = new RegExp(`\\b${item}\\b`, 'i');
+         if (regex.test(conditions)) {
+            QueryDatabase(`INSERT INTO metadata_columnconditions (redisKey, columnName) VALUES ('`+redisKey+`', '`+item+`')`)
+         }
+      }
+      console.log('◻ Logged metadata_columnconditions');
    }
 }
 
@@ -110,7 +125,7 @@ const sqlEventConn = mysql.createConnection({
 const instance = new MySQLEvents(sqlEventConn, {startAtEnd: true});
 instance.start()
    .then(() => {
-      console.log('✔ Listening to change in DB')
+      console.log('✔ Listening to change in DB');
    })
    .catch(err => console.error('⚠︎ MySQLEvent failed to start.', err));
 
@@ -130,7 +145,7 @@ instance.addTrigger({
          console.log('▷ Value before:', event.affectedRows[0].before[affectedColumns[0]]);
          console.log('▷ Value after:', event.affectedRows[0].after[affectedColumns[0]]);
       }
-   },
+   }
 })
 instance.on(MySQLEvents.EVENTS.CONNECTION_ERROR, console.error);
 instance.on(MySQLEvents.EVENTS.ZONGJI_ERROR, console.error);
