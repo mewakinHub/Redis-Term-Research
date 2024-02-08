@@ -23,6 +23,19 @@ let compressQualityMax = 0.8; //Float range (0, 1]. The ceiling of compressed im
 let compressCorrection = 0.95; //Float range (0, 1]. Not recommended to change. The amount to correct Sharp's bigger output size when no compression is applied (quality = 80).
 const forceCompressQuality = 0; //Float range (0, 1]. Set to negative or zero to disable. Used for testing.
 
+//Invalid system variables prevention
+
+port = Math.round(Math.max(port, 1000));
+TTLbase = Math.round(Math.max(TTLbase, 1));
+TTLmax = Math.round(Math.max(TTLbase, 1));
+compressStiffness = Math.max(compressStiffness, 0.01);
+compressQualityMin = Math.min(Math.max(compressQualityMin, 0.01), 1);
+compressQualityMax = Math.min(Math.max(compressQualityMax, 0.01), 1);
+if (compressQualityMin > compressQualityMax) {
+   [compressQualityMin, compressQualityMax] = [compressQualityMax, compressQualityMin];
+}
+compressCorrection = Math.min(Math.max(compressCorrection, 0), 1);
+
 //Initialize Express
 
 const app = express();
@@ -35,17 +48,17 @@ app.listen(port, () => {
 //Adjustable Express API endpoints
 
 app.get('/all', async (req, res) => {
-   FetchQuery(res, 'SELECT id, image FROM images', 'imgS', ['id'], ['image']);
+   FetchQuery(res, 'SELECT id, image FROM images', 'imgS:all', ['id'], ['image']);
 });
 
 app.get('/album/:album', async (req, res) => {
    const album = req.params.album;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS-album'+album, ['id'], ['image']);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE album='+album, 'imgS:album:'+album, ['id'], ['image']);
 });
 
 app.get('/id/:id', async (req, res) => {
    const id = req.params.id;
-   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS-id'+id, ['id'], ['image']);
+   FetchQuery(res, 'SELECT id, image FROM images WHERE id='+id, 'imgS:id:'+id, ['id'], ['image']);
 });
 
 
